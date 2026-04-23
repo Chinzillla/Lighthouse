@@ -171,14 +171,14 @@ npm run test:ci
 npm run build
 ```
 
-The same checks run in GitHub Actions on pull requests and pushes to `main`
-or `codex/**` branches.
+The same checks run in GitHub Actions on pull requests and pushes to `main`,
+`feature/**`, `fix/**`, or `chore/**` branches.
 
 ## Branching Workflow
 
 - `main` should stay releasable.
 - Feature work should happen on short-lived branches such as
-  `codex/revamp-foundation`, `feature/replay-cli`, or `fix/prometheus-errors`.
+  `feature/revamp-foundation`, `feature/replay-cli`, or `fix/prometheus-errors`.
 - Each branch should keep a focused scope and pass CI before merge.
 - Larger work should be split into small commits that map to the roadmap.
 
