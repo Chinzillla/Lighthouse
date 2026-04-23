@@ -5,9 +5,10 @@ an existing Kafka-compatible cluster. The project uses one configuration model:
 Kafka connection settings feed the Lighthouse metrics exporter, Prometheus
 scrapes that exporter, and the Next.js app reads from Prometheus.
 
-## Local Docker Kafka
+## Option 1: Local Sample Kafka
 
-Use this for demos and local development:
+Use this for demos and local development. It does not require a hosted Kafka
+cluster.
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml up --build
@@ -41,12 +42,22 @@ Use this bootstrap list from containers:
 kafka-1:9092,kafka-2:9092,kafka-3:9092
 ```
 
-## Existing Plain Kafka Cluster
+## Option 2: Existing Kafka Endpoint
 
-For a non-SASL Kafka cluster, set only the bootstrap endpoints:
+For a non-SASL Kafka cluster, set only the bootstrap endpoints in `.env`:
+
+```env
+KAFKA_BROKERS=broker1:9092,broker2:9092
+KAFKA_SSL=false
+KAFKA_SASL_USERNAME=
+KAFKA_SASL_PASSWORD=
+PROMETHEUS_API=http://localhost:9090
+```
+
+Then run:
 
 ```bash
-KAFKA_BROKERS=broker1:9092,broker2:9092 docker compose up --build
+docker compose up --build
 ```
 
 For local Node development, run the exporter directly:
@@ -55,20 +66,11 @@ For local Node development, run the exporter directly:
 KAFKA_BROKERS=localhost:19092,localhost:19093,localhost:19094 npm run metrics:exporter
 ```
 
-## Confluent Cloud
+## Option 3: Confluent Cloud
 
-Create a Confluent Cloud API key and secret for the cluster, then run:
+Create a Confluent Cloud API key and secret for the cluster.
 
-```bash
-KAFKA_BROKERS=pkc-example.us-east-1.aws.confluent.cloud:9092 \
-KAFKA_SSL=true \
-KAFKA_SASL_MECHANISM=plain \
-KAFKA_SASL_USERNAME="<api-key>" \
-KAFKA_SASL_PASSWORD="<api-secret>" \
-docker compose up --build
-```
-
-The same values can be placed in a local `.env` file:
+Create a local `.env` file:
 
 ```env
 KAFKA_BROKERS=pkc-example.us-east-1.aws.confluent.cloud:9092
@@ -80,6 +82,12 @@ PROMETHEUS_API=http://localhost:9090
 ```
 
 Do not commit real API keys or secrets.
+
+Then run:
+
+```bash
+docker compose up --build
+```
 
 ## Exported Metrics
 

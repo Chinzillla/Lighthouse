@@ -44,14 +44,99 @@ Browser
 The frontend never calls Prometheus directly. Prometheus access stays on the
 server side through `PROMETHEUS_API`.
 
+## Quick Start
+
+Choose one of three run modes:
+
+1. local sample Kafka cluster for demos
+2. existing Kafka endpoint
+3. Confluent Cloud cluster
+
+The default demo does not require a Google VM, Confluent Cloud account, or
+pre-existing Kafka infrastructure.
+
+### Option 1: Lighthouse With Sample Kafka
+
+Use this when you want the full demo environment on your machine.
+
+Prerequisite:
+
+- Docker Desktop or Docker Engine
+
+Start Lighthouse with a local three-broker Kafka cluster, seeded topics,
+sample producer, metrics exporter, and Prometheus:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml up --build
+```
+
+Open:
+
+- Lighthouse UI: `http://localhost:3000`
+- Prometheus: `http://localhost:9090`
+- Kafka exporter metrics: `http://localhost:9308/metrics`
+
+The local cluster exposes these host bootstrap ports:
+
+```text
+localhost:19092,localhost:19093,localhost:19094
+```
+
+### Option 2: Lighthouse With Existing Kafka
+
+Use this when you already have a plain Kafka-compatible cluster.
+
+Create a local `.env` file:
+
+```env
+KAFKA_BROKERS=broker1:9092,broker2:9092
+KAFKA_SSL=false
+KAFKA_SASL_USERNAME=
+KAFKA_SASL_PASSWORD=
+PROMETHEUS_API=http://localhost:9090
+```
+
+Start Lighthouse, Prometheus, and the Kafka metrics exporter:
+
+```bash
+docker compose up --build
+```
+
+Open `http://localhost:3000`.
+
+### Option 3: Lighthouse With Confluent Cloud
+
+Use this when your Kafka cluster is hosted on Confluent Cloud.
+
+Create a local `.env` file:
+
+```env
+KAFKA_BROKERS=pkc-example.us-east-1.aws.confluent.cloud:9092
+KAFKA_SSL=true
+KAFKA_SASL_MECHANISM=plain
+KAFKA_SASL_USERNAME=<confluent-api-key>
+KAFKA_SASL_PASSWORD=<confluent-api-secret>
+PROMETHEUS_API=http://localhost:9090
+```
+
+Then start Lighthouse:
+
+```bash
+docker compose up --build
+```
+
+Open `http://localhost:3000`.
+
+Do not commit real Confluent credentials. `.env` is ignored by git.
+
 ## Local Development
+
+Use this when working on the Next.js app itself.
 
 Prerequisites:
 
 - Node.js 20
 - npm
-- Optional: Docker Desktop
-- Optional: Prometheus endpoint exposing Kafka metrics
 
 Install dependencies:
 
@@ -65,58 +150,16 @@ Run the app locally:
 npm run dev
 ```
 
-With a Prometheus endpoint on PowerShell:
+If Prometheus is running locally, set `PROMETHEUS_API=http://localhost:9090`.
+On PowerShell:
 
 ```powershell
 $env:PROMETHEUS_API="http://localhost:9090"
 npm.cmd run dev
 ```
 
-The app runs at `http://localhost:3000`.
-
-## Local Kafka Demo
-
-Run a local three-broker Kafka cluster, metrics exporter, Prometheus, demo
-producer, and Lighthouse UI:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml up --build
-```
-
-Then open:
-
-- Lighthouse: `http://localhost:3000`
-- Prometheus: `http://localhost:9090`
-- Kafka exporter metrics: `http://localhost:9308/metrics`
-
-The local cluster exposes bootstrap ports `19092`, `19093`, and `19094` on the
-host. Containers use `kafka-1:9092,kafka-2:9092,kafka-3:9092`.
-
-## External Kafka
-
-Lighthouse can also monitor an existing Apache Kafka-compatible cluster or
-Confluent Cloud cluster by running the metrics exporter with your broker
-configuration.
-
-Plain Kafka example:
-
-```bash
-KAFKA_BROKERS=broker1:9092,broker2:9092 docker compose up --build
-```
-
-Confluent Cloud example:
-
-```bash
-KAFKA_BROKERS=pkc-example.us-east-1.aws.confluent.cloud:9092 \
-KAFKA_SSL=true \
-KAFKA_SASL_MECHANISM=plain \
-KAFKA_SASL_USERNAME="<api-key>" \
-KAFKA_SASL_PASSWORD="<api-secret>" \
-docker compose up --build
-```
-
 See [docs/KAFKA_CONFIGURATION.md](docs/KAFKA_CONFIGURATION.md) for the full
-configuration guide.
+Kafka configuration guide.
 
 ## Quality Gates
 
@@ -130,20 +173,6 @@ npm run build
 
 The same checks run in GitHub Actions on pull requests and pushes to `main`
 or `codex/**` branches.
-
-## Docker
-
-Build and run the app with Prometheus and the Kafka metrics exporter:
-
-```bash
-docker compose up --build
-```
-
-Pass a Prometheus endpoint through the environment:
-
-```bash
-PROMETHEUS_API=http://localhost:9090 docker compose up --build
-```
 
 ## Branching Workflow
 
