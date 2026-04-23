@@ -24,6 +24,17 @@ query Query {
   }
 }
 `,
+retainedBytes: gql`
+query Query {
+  retainedBytes {
+    data{
+      result{
+        value
+      }
+    }
+  }
+}
+`,
 receivedRecords: gql`
 query Query {
   receivedRecords {

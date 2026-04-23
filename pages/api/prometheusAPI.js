@@ -1,47 +1,58 @@
 const { RESTDataSource } = require('apollo-datasource-rest');
-const dotenv = require("dotenv");
+
+const EMPTY_PROMETHEUS_RESPONSE = {
+  status: 'success',
+  data: {
+    resultType: 'vector',
+    result: [],
+  },
+};
 
 export class PrometheusAPI extends RESTDataSource {
   constructor() {
     super();
-    const API_URL = process.env.PROMETHEUS_API
-    this.baseURL = API_URL;
+    const apiUrl = process.env.PROMETHEUS_API;
+    this.baseURL = apiUrl ? `${apiUrl.replace(/\/$/, '')}/` : undefined;
+  }
+
+  async queryMetric(metricName, secondsAgo) {
+    if (!this.baseURL) return EMPTY_PROMETHEUS_RESPONSE;
+
+    const timestamp = Math.floor(Date.now() / 1000) - secondsAgo;
+    const query = encodeURIComponent(metricName);
+
+    return this.get(`api/v1/query?query=${query}&time=${timestamp}`);
   }
   
   async getPartitionCount() {
-    let date = Math.floor((new Date().getTime()/1000)) - 180;
-    return this.get(`api/v1/query?query=confluent_kafka_server_partition_count&time=${date}`)  
+    return this.queryMetric('confluent_kafka_server_partition_count', 180);
   }
   
   async getReceivedBytes(){
-    let date = Math.floor((new Date().getTime()/1000)) - 500;
-    console.log('received bytes gql')
-    return this.get(`api/v1/query?query=confluent_kafka_server_received_bytes&time=${date}`)
+    return this.queryMetric('confluent_kafka_server_received_bytes', 500);
+  }
+
+  async getRetainedBytes(){
+    return this.queryMetric('confluent_kafka_server_retained_bytes', 500);
   }
 
   async getSentBytes(){
-    let date = Math.floor((new Date().getTime()/1000)) - 540;
-    return this.get(`api/v1/query?query=confluent_kafka_server_sent_bytes&time=${date}`)
+    return this.queryMetric('confluent_kafka_server_sent_bytes', 540);
   }
 
   async getSentRecords(){
-    console.log('records is called in gql')
-    let date = Math.floor((new Date().getTime()/1000)) - 540;
-    return this.get(`api/v1/query?query=confluent_kafka_server_sent_records&time=${date}`)
+    return this.queryMetric('confluent_kafka_server_sent_records', 540);
   }
 
   async getReceivedRecords(){
-    let date = Math.floor((new Date().getTime()/1000)) - 180;
-    return this.get(`api/v1/query?query=confluent_kafka_server_received_records&time=${date}`)
+    return this.queryMetric('confluent_kafka_server_received_records', 180);
   }
 
   async getAuthCount(){
-    let date = Math.floor((new Date().getTime()/1000)) - 180;
-    return this.get(`api/v1/query?query=confluent_kafka_server_successful_authentication_count&time=${date}`)
+    return this.queryMetric('confluent_kafka_server_successful_authentication_count', 180);
   }
 
   async getActiveConnectionCount(){
-    let date = Math.floor((new Date().getTime()/1000)) - 180;
-    return this.get(`api/v1/query?query=confluent_kafka_server_active_connection_count&time=${date}`)
+    return this.queryMetric('confluent_kafka_server_active_connection_count', 180);
   }
 }

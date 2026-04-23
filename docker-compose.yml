@@ -1,0 +1,9 @@
+services:
+  lighthouse:
+    build:
+      context: .
+    environment:
+      PROMETHEUS_API: ${PROMETHEUS_API:-}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

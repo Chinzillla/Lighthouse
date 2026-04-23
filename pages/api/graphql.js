@@ -10,8 +10,8 @@ const typeDefs = gql`
     kafka_id: String 
   }
 
-  type Result { 
-    value: [Int ] 
+  type Result {
+    value: [String]
     metric: Metric 
   }
 
@@ -28,6 +28,7 @@ const typeDefs = gql`
   type Query {
     prometheus: JSONResult
     receivedBytes: JSONResult
+    retainedBytes: JSONResult
     sentBytes: JSONResult
     sentRecords: JSONResult
     receivedRecords: JSONResult
@@ -43,6 +44,9 @@ const resolvers = {
     },
     receivedBytes: async (_,__, {dataSources}) => {
       return dataSources.prometheusAPI.getReceivedBytes();
+    },
+    retainedBytes: async (_,__, {dataSources}) => {
+      return dataSources.prometheusAPI.getRetainedBytes();
     },
     sentBytes: async (_,__, {dataSources}) => {
       return dataSources.prometheusAPI.getSentBytes();

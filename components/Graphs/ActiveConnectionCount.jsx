@@ -1,17 +1,11 @@
-import gqlQueries from "../../queries.jsx";
-import { useQuery } from '@apollo/client';
+import MetricStat from './MetricStat';
 
-
-function ActiveConnectionCount(props) {
-  const {loading, error, data} = useQuery(gqlQueries.activeConnections);
-
-  const connectionCount = props.results
-  return(
-    <div>
-    Active Connections
-    <div>{connectionCount ? connectionCount : 0}</div>
-    </div>
-  )
+export default function ActiveConnectionCount({ results = 0 }) {
+  return (
+    <MetricStat
+      label="Active Connections"
+      value={results}
+      helperText="current open broker connections"
+    />
+  );
 }
-
-  module.exports = ActiveConnectionCount

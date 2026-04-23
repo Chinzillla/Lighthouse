@@ -1,17 +1,11 @@
-import gqlQueries from "../../queries.jsx";
-import { useQuery } from '@apollo/client';
+import MetricStat from './MetricStat';
 
-function PartitionCount(props) {
-const {loading, error, data} = useQuery(gqlQueries.partitionCount);
-
-const count = props.results;
-
-  return(
-    <div>
-      <div>Partition Count</div>
-      {count}
-    </div>
-  )
+export default function PartitionCount({ results = 0 }) {
+  return (
+    <MetricStat
+      label="Partition Count"
+      value={results}
+      helperText="reported by Prometheus"
+    />
+  );
 }
-
-module.exports = PartitionCount

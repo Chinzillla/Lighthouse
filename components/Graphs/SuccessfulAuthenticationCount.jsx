@@ -1,16 +1,11 @@
-import gqlQueries from "../../queries.jsx";
-import { useQuery } from '@apollo/client';
+import MetricStat from './MetricStat';
 
-function SuccessfulAuthenticationCount(props) {
-
-const {loading, error, data} = useQuery(gqlQueries.authCount);
-
-  return(
-    <div>
-      <div>Successful Authentication Count</div>
-      {props.results}
-    </div>
-  )
+export default function SuccessfulAuthenticationCount({ results = 0 }) {
+  return (
+    <MetricStat
+      label="Successful Authentication Count"
+      value={results}
+      helperText="successful client auth events"
+    />
+  );
 }
-
-module.exports = SuccessfulAuthenticationCount;

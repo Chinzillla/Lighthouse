@@ -1,76 +1,331 @@
-.container {
-  max-width: 100%;
-  height: auto;
+.page {
+  min-height: 100vh;
+  background: #f5f6f1;
+  color: #202521;
 }
 
-/* .container #navbar{
-  height: 100px;
-}
- */
-.container #navbar #component1{
-  position:grid;
-  grid-template-columns: 1fr, 1fr;
-}
-
-.cardGrid1 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-}
-
-.cardGrid2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto;
-  margin-left: 1%;
-  margin-right: 1%;
-}
-
-.cardGrid1 #card {
-  margin: 1rem;
-  padding: 1.5rem; 
-  text-align: left;
-  color: inherit;
-  text-decoration: none;
-  border: 1px solid #eaeaea;
-  border-radius: 10px;
-  transition: color 0.15s ease, border-color 0.15s ease;
-  max-height: 100%;
-  max-width: 100%;
-}
-
-.cardGrid2 #card {
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
-  justify-content: center;
   align-items: center;
-  margin: 2.8rem;
-  padding: 1.5rem;
-  text-align: center;
-  color: inherit;
-  text-decoration: none;
-  border: 1px solid #eaeaea;
-  border-radius: 10px;
-  transition: color 0.15s ease, border-color 0.15s ease;
-  max-height: 300px;
-  max-width: 1400px;
-  font-size: 30px;
-  background: #394441;
+  justify-content: space-between;
+  min-height: 72px;
+  padding: 0 32px;
+  border-bottom: 1px solid #dfe4dc;
+  background: rgba(245, 246, 241, 0.94);
+  backdrop-filter: blur(10px);
 }
 
-
-.card:hover,
-.card:focus,
-.card:active {
-  color: #0070f3;
-  border-color: #0070f3;
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.125rem;
+  font-weight: 700;
 }
 
-.card h2 {
-  margin: 0 0 1rem 0;
-  font-size: 1.5rem;
+.brand img {
+  border-radius: 8px;
 }
 
-.card p {
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navActions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #384139;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.navActions a:hover,
+.navActions a:focus-visible {
+  border-color: #bdc8bb;
+  background: #ffffff;
+  outline: none;
+}
+
+.shell {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 36px 0 64px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 24px;
+}
+
+.heroCopy {
+  padding: 8px 0 12px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: #2f7d62;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 760px;
   margin: 0;
-  font-size: 1.25rem;
+  color: #18201b;
+  font-size: 3rem;
+  line-height: 1.03;
+}
+
+.heroCopy p:last-child {
+  max-width: 690px;
+  margin: 18px 0 0;
+  color: #586057;
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.statusPanel,
+.metricCard,
+.chartPanel,
+.roadmapBand {
+  border: 1px solid #dfe4dc;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 40px rgba(33, 42, 35, 0.06);
+}
+
+.statusPanel {
+  display: grid;
+  align-content: space-between;
+  gap: 28px;
+  padding: 22px;
+}
+
+.statusPanel > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusPanel p {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.statusOk,
+.statusBad {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.statusOk {
+  background: #2f7d62;
+  box-shadow: 0 0 0 5px rgba(47, 125, 98, 0.14);
+}
+
+.statusBad {
+  background: #b84532;
+  box-shadow: 0 0 0 5px rgba(184, 69, 50, 0.14);
+}
+
+.statusPanel dl {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 0;
+}
+
+.statusPanel dt {
+  color: #71796f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.statusPanel dd {
+  margin: 4px 0 0;
+  color: #202521;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.metricCard {
+  min-height: 150px;
+  padding: 20px;
+}
+
+.metricCard p {
+  margin: 0;
+  color: #586057;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.metricCard strong {
+  display: block;
+  margin: 14px 0 8px;
+  color: #18201b;
+  font-size: 2.1rem;
+  line-height: 1;
+}
+
+.metricCard span {
+  color: #737b71;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.chartGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.chartPanel {
+  min-height: 360px;
+  padding: 20px;
+}
+
+.chartPanel section {
+  display: grid;
+  grid-template-rows: auto minmax(240px, 1fr);
+  height: 100%;
+}
+
+.chartPanel section > div:first-child {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.chartPanel h3 {
+  margin: 0;
+  color: #202521;
+  font-size: 1.05rem;
+}
+
+.chartPanel span {
+  color: #71796f;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.roadmapBand {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+  gap: 24px;
+  margin-top: 24px;
+  padding: 24px;
+}
+
+.roadmapBand h2 {
+  max-width: 420px;
+  margin: 0;
+  color: #18201b;
+  font-size: 1.6rem;
+  line-height: 1.18;
+}
+
+.roadmapBand ol {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roadmapBand li {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: center;
+  color: #3c453e;
   line-height: 1.5;
+}
+
+.roadmapBand li span {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 8px;
+  background: #e7efe8;
+  color: #2f7d62;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    padding: 0 20px;
+  }
+
+  .shell {
+    width: min(100% - 28px, 760px);
+    padding-top: 28px;
+  }
+
+  .hero,
+  .chartGrid,
+  .roadmapBand {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: 2.35rem;
+  }
+
+  .metricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .navActions {
+    flex-wrap: wrap;
+  }
+
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .metricGrid,
+  .statusPanel dl {
+    grid-template-columns: 1fr;
+  }
+
+  .metricCard strong {
+    font-size: 1.8rem;
+  }
 }

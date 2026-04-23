@@ -1,17 +1,11 @@
-import gqlQueries from "../../queries.jsx";
-import { useQuery } from '@apollo/client';
+import MetricStat from './MetricStat';
 
-
-function ReceivedRecords(props) {
-  const {loading, error, data} = useQuery(gqlQueries.receivedRecords);
-  let record = props.results
-
-  return(
-    <div>
-    Received Records
-    <div> {record ? record : 0}</div>
-    </div>
-  )
+export default function ReceivedRecords({ results = 0 }) {
+  return (
+    <MetricStat
+      label="Received Records"
+      value={results}
+      helperText="records received by brokers"
+    />
+  );
 }
-
-module.exports = ReceivedRecords
