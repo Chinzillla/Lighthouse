@@ -51,8 +51,11 @@ KAFKA_BROKERS=broker1:9092,broker2:9092
 KAFKA_SSL=false
 KAFKA_SASL_USERNAME=
 KAFKA_SASL_PASSWORD=
-PROMETHEUS_API=http://localhost:9090
 ```
+
+If Kafka is running directly on your host machine and the exporter is running
+inside Docker Compose, use `host.docker.internal:9092` instead of
+`localhost:9092`.
 
 Then run:
 
@@ -78,7 +81,6 @@ KAFKA_SSL=true
 KAFKA_SASL_MECHANISM=plain
 KAFKA_SASL_USERNAME=<api-key>
 KAFKA_SASL_PASSWORD=<api-secret>
-PROMETHEUS_API=http://localhost:9090
 ```
 
 Do not commit real API keys or secrets.

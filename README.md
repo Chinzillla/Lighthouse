@@ -93,8 +93,11 @@ KAFKA_BROKERS=broker1:9092,broker2:9092
 KAFKA_SSL=false
 KAFKA_SASL_USERNAME=
 KAFKA_SASL_PASSWORD=
-PROMETHEUS_API=http://localhost:9090
 ```
+
+If Kafka is running directly on your host machine and the exporter is running
+through Docker Compose, use `host.docker.internal:9092` instead of
+`localhost:9092`.
 
 Start Lighthouse, Prometheus, and the Kafka metrics exporter:
 
@@ -116,7 +119,6 @@ KAFKA_SSL=true
 KAFKA_SASL_MECHANISM=plain
 KAFKA_SASL_USERNAME=<confluent-api-key>
 KAFKA_SASL_PASSWORD=<confluent-api-secret>
-PROMETHEUS_API=http://localhost:9090
 ```
 
 Then start Lighthouse:
@@ -172,7 +174,14 @@ npm run build
 ```
 
 The same checks run in GitHub Actions on pull requests and pushes to `main`,
-`feature/**`, `fix/**`, or `chore/**` branches.
+`feature/**`, `fix/**`, or `chore/**` branches. Cypress runs against the built
+Next.js app in CI.
+
+For local end-to-end checks, start the app first and then run:
+
+```bash
+npm run cypress:run
+```
 
 ## Branching Workflow
 

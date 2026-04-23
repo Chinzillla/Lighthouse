@@ -1,83 +1,27 @@
-import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
 import styles from '../styles/Home.module.css';
 import NavBar from '../components/Navbar/navbar';
-import ActiveConnectionCount from '../components/Graphs/ActiveConnectionCount.jsx';
+import BrokerSignal from '../components/Graphs/BrokerSignal.jsx';
+import KafkaActivityChart from '../components/Graphs/KafkaActivityChart.jsx';
+import LogEndOffset from '../components/Graphs/LogEndOffset.jsx';
+import MetricsExporterStatus from '../components/Graphs/MetricsExporterStatus.jsx';
 import PartitionCount from '../components/Graphs/PartitionCount.jsx';
-import ReceivedBytes from '../components/Graphs/ReceivedBytes.jsx';
-import ReceivedRecords from '../components/Graphs/ReceivedRecords.jsx';
-import RetainedBytes from '../components/Graphs/RetainedBytes.jsx';
-import SuccessfulAuthenticationCount from '../components/Graphs/SuccessfulAuthenticationCount.jsx';
+import TopicInventoryChart from '../components/Graphs/TopicInventoryChart.jsx';
 import gqlQueries from '../queries.jsx';
 
 const POLL_INTERVAL_MS = 5000;
 
-function firstMetricValue(data, fieldName) {
-  const result = data?.[fieldName]?.data?.result?.find(
-    (entry) => entry?.value?.[1] !== undefined
-  );
-
-  return result?.value?.[1] ?? 0;
-}
-
-function useMetricQuery(query) {
-  return useQuery(query, {
+export default function Home() {
+  const { data, error, loading } = useQuery(gqlQueries.dashboardMetrics, {
     notifyOnNetworkStatusChange: true,
     pollInterval: POLL_INTERVAL_MS,
   });
-}
 
-export default function Home() {
-  const partitionQuery = useMetricQuery(gqlQueries.partitionCount);
-  const receivedBytesQuery = useMetricQuery(gqlQueries.receivedBytes);
-  const retainedBytesQuery = useMetricQuery(gqlQueries.retainedBytes);
-  const receivedRecordsQuery = useMetricQuery(gqlQueries.receivedRecords);
-  const authQuery = useMetricQuery(gqlQueries.authCount);
-  const activeConnectionsQuery = useMetricQuery(gqlQueries.activeConnections);
+  const metrics = data?.dashboardMetrics ?? {};
 
-  const queries = [
-    partitionQuery,
-    receivedBytesQuery,
-    retainedBytesQuery,
-    receivedRecordsQuery,
-    authQuery,
-    activeConnectionsQuery,
-  ];
-
-  const isLoading = queries.some((query) => query.loading);
-  const hasError = queries.some((query) => query.error);
-
-  const metrics = useMemo(
-    () => ({
-      activeConnections: firstMetricValue(
-        activeConnectionsQuery.data,
-        'activeConnectionCount'
-      ),
-      authCount: firstMetricValue(
-        authQuery.data,
-        'successfulAuthenticationCount'
-      ),
-      partitionCount: firstMetricValue(partitionQuery.data, 'prometheus'),
-      receivedBytes: firstMetricValue(receivedBytesQuery.data, 'receivedBytes'),
-      receivedRecords: firstMetricValue(
-        receivedRecordsQuery.data,
-        'receivedRecords'
-      ),
-      retainedBytes: firstMetricValue(retainedBytesQuery.data, 'retainedBytes'),
-    }),
-    [
-      activeConnectionsQuery.data,
-      authQuery.data,
-      partitionQuery.data,
-      receivedBytesQuery.data,
-      receivedRecordsQuery.data,
-      retainedBytesQuery.data,
-    ]
-  );
-
-  const apiStatus = hasError
+  const apiStatus = error
     ? 'Prometheus unavailable'
-    : isLoading
+    : loading
     ? 'Polling metrics'
     : 'Metrics online';
 
@@ -98,7 +42,7 @@ export default function Home() {
 
           <aside className={styles.statusPanel} aria-label="Runtime status">
             <div>
-              <span className={hasError ? styles.statusBad : styles.statusOk} />
+              <span className={error ? styles.statusBad : styles.statusOk} />
               <p>{apiStatus}</p>
             </div>
             <dl>
@@ -123,22 +67,22 @@ export default function Home() {
             <PartitionCount results={metrics.partitionCount} />
           </article>
           <article className={styles.metricCard}>
-            <ActiveConnectionCount results={metrics.activeConnections} />
+            <BrokerSignal value={metrics.brokerCount} />
           </article>
           <article className={styles.metricCard}>
-            <ReceivedRecords results={metrics.receivedRecords} />
+            <LogEndOffset value={metrics.totalLogEndOffset} />
           </article>
           <article className={styles.metricCard}>
-            <SuccessfulAuthenticationCount results={metrics.authCount} />
+            <MetricsExporterStatus value={metrics.exporterUp} />
           </article>
         </section>
 
-        <section className={styles.chartGrid} aria-label="Kafka byte trends">
+        <section className={styles.chartGrid} aria-label="Kafka snapshots">
           <article className={styles.chartPanel}>
-            <ReceivedBytes value={metrics.receivedBytes} />
+            <KafkaActivityChart value={metrics.totalLogEndOffset} />
           </article>
           <article className={styles.chartPanel}>
-            <RetainedBytes value={metrics.retainedBytes} />
+            <TopicInventoryChart value={metrics.topicCount} />
           </article>
         </section>
 

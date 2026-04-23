@@ -1,6 +1,6 @@
 import MetricLineChart from './MetricLineChart';
 
-export default function ReceivedBytes({ value = 0 }) {
+export default function KafkaActivityChart({ value = 0 }) {
   return (
     <MetricLineChart
       label="Kafka Activity"

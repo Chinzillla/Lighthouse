@@ -1,14 +1,14 @@
 import { render, screen } from '@testing-library/react';
-import ReceivedRecords from '../ReceivedRecords';
+import LogEndOffset from '../LogEndOffset';
 
-describe('ReceivedRecords component', () => {
+describe('LogEndOffset component', () => {
   it('renders the log end offset title', () => {
-    render(<ReceivedRecords results={0} />);
+    render(<LogEndOffset value={0} />);
     expect(screen.getByText('Log End Offset')).toBeInTheDocument();
   });
 
-  it('displays the received records count', () => {
-    render(<ReceivedRecords results={7} />);
+  it('displays the log end offset value', () => {
+    render(<LogEndOffset value={7} />);
     expect(screen.getByText('7')).toBeInTheDocument();
   });
 });

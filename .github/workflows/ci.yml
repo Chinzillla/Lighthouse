@@ -36,6 +36,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Run Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          install: false
+          start: npm start -- -p 3000
+          wait-on: http://localhost:3000
+          wait-on-timeout: 120
+          command: npm run cypress:run
+
   docker:
     name: Docker build
     runs-on: ubuntu-latest

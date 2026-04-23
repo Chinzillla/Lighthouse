@@ -15,6 +15,17 @@ features.
 
 Deliverable: a stable dashboard branch that passes lint, tests, and build.
 
+## Phase 0.5: Dependency Modernization
+
+Goal: reduce framework risk before the replay engine grows.
+
+- Upgrade from Next 12 to a supported Next.js release
+- Replace Apollo Server v3 packages with a maintained GraphQL route implementation
+- Re-run Docker, unit, build, and Cypress checks after the migration
+
+Deliverable: production dependency audit findings are resolved without changing
+the user-facing workflow.
+
 ## Phase 1: Replay CLI Prototype
 
 Goal: prove deterministic offset-range replay without adding UI complexity.

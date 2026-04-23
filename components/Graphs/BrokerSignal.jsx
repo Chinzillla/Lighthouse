@@ -1,10 +1,10 @@
 import MetricStat from './MetricStat';
 
-export default function ActiveConnectionCount({ results = 0 }) {
+export default function BrokerSignal({ value = 0 }) {
   return (
     <MetricStat
       label="Broker Signal"
-      value={results}
+      value={value}
       helperText="broker count locally, connection signal externally"
     />
   );

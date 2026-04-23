@@ -3,7 +3,7 @@ services:
     build:
       context: .
     environment:
-      PROMETHEUS_API: ${PROMETHEUS_API:-http://prometheus:9090}
+      PROMETHEUS_API: http://prometheus:9090
     ports:
       - "3000:3000"
     depends_on:
@@ -30,7 +30,7 @@ services:
     environment:
       KAFKA_BROKERS: ${KAFKA_BROKERS:-host.docker.internal:9092}
       KAFKA_CLIENT_ID: ${KAFKA_CLIENT_ID:-lighthouse-metrics}
-      KAFKA_SSL: ${KAFKA_SSL:-false}
+      KAFKA_SSL: ${KAFKA_SSL:-}
       KAFKA_SASL_MECHANISM: ${KAFKA_SASL_MECHANISM:-plain}
       KAFKA_SASL_USERNAME: ${KAFKA_SASL_USERNAME:-}
       KAFKA_SASL_PASSWORD: ${KAFKA_SASL_PASSWORD:-}

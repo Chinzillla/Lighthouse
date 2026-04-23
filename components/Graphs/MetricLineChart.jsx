@@ -1,23 +1,19 @@
 import React, { useMemo } from 'react';
 import {
+  BarElement,
   CategoryScale,
   Chart,
-  Filler,
   Legend,
   LinearScale,
-  LineElement,
-  PointElement,
   Tooltip,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Bar } from 'react-chartjs-2';
 
 Chart.register(
+  BarElement,
   CategoryScale,
-  Filler,
   Legend,
   LinearScale,
-  LineElement,
-  PointElement,
   Tooltip
 );
 
@@ -26,42 +22,26 @@ function toNumber(value) {
   return Number.isFinite(numericValue) ? numericValue : 0;
 }
 
-function buildDisplaySeries(value) {
-  const currentValue = toNumber(value);
-  const baseline = Math.max(currentValue * 0.78, 0);
-
-  return [
-    baseline,
-    Math.max(currentValue * 0.82, 0),
-    Math.max(currentValue * 0.9, 0),
-    Math.max(currentValue * 0.88, 0),
-    Math.max(currentValue * 0.96, 0),
-    currentValue,
-  ];
-}
-
 function MetricLineChart({ label, value, borderColor, backgroundColor }) {
-  const series = useMemo(() => buildDisplaySeries(value), [value]);
+  const currentValue = useMemo(() => toNumber(value), [value]);
 
   return (
-    <section aria-label={`${label} chart`}>
+    <section aria-label={`${label} snapshot`}>
       <div>
         <h3>{label}</h3>
-        <span>latest sample</span>
+        <span>current sample</span>
       </div>
-      <Line
+      <Bar
         data={{
-          labels: ['-25s', '-20s', '-15s', '-10s', '-5s', 'now'],
+          labels: ['current'],
           datasets: [
             {
               label,
-              data: series,
+              data: [currentValue],
               backgroundColor,
               borderColor,
               borderWidth: 2,
-              fill: true,
-              pointRadius: 2,
-              tension: 0.35,
+              borderRadius: 6,
             },
           ],
         }}

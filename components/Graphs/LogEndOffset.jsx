@@ -1,10 +1,10 @@
 import MetricStat from './MetricStat';
 
-export default function ReceivedRecords({ results = 0 }) {
+export default function LogEndOffset({ value = 0 }) {
   return (
     <MetricStat
       label="Log End Offset"
-      value={results}
+      value={value}
       helperText="latest observed Kafka offsets"
     />
   );
