@@ -6,11 +6,9 @@ import styles from '../../styles/Home.module.css';
 export default function NavBar() {
   return (
     <header className={styles.topbar}>
-      <Link href="/" legacyBehavior>
-        <a className={styles.brand} aria-label="Lighthouse home">
-          <Image src={LighthouseLogo} alt="" width={36} height={36} priority />
-          <span>Lighthouse</span>
-        </a>
+      <Link href="/" className={styles.brand} aria-label="Lighthouse home">
+        <Image src={LighthouseLogo} alt="" width={36} height={36} priority />
+        <span>Lighthouse</span>
       </Link>
       <nav className={styles.navActions} aria-label="Primary navigation">
         <a href="#metrics">Metrics</a>

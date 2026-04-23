@@ -1,11 +1,5 @@
-import { useQuery } from '@apollo/client';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import Home from '../pages';
-
-jest.mock('@apollo/client', () => ({
-  ...jest.requireActual('@apollo/client'),
-  useQuery: jest.fn(),
-}));
 
 jest.mock('chart.js', () => ({
   BarElement: {},
@@ -47,29 +41,42 @@ function metricCard(label) {
     .closest('div');
 }
 
+function successfulMetricsResponse(metrics) {
+  return Promise.resolve({
+    json: () => Promise.resolve({ dashboardMetrics: metrics }),
+    ok: true,
+  });
+}
+
 describe('Home dashboard', () => {
   beforeEach(() => {
-    useQuery.mockReset();
+    fetch.resetMocks();
   });
 
-  it('maps dashboard metric data into stat cards and snapshot charts', () => {
-    useQuery.mockReturnValue({
-      data: {
-        dashboardMetrics: {
-          brokerCount: '3',
-          exporterUp: '1',
-          partitionCount: '9',
-          topicCount: '4',
-          totalLogEndOffset: '12500',
-        },
-      },
-      error: undefined,
-      loading: false,
-    });
+  it('fetches dashboard metrics and maps them into stat cards and snapshot charts', async () => {
+    fetch.mockImplementation(() =>
+      successfulMetricsResponse({
+        brokerCount: '3',
+        exporterUp: '1',
+        partitionCount: '9',
+        topicCount: '4',
+        totalLogEndOffset: '12500',
+      })
+    );
 
     render(<Home />);
 
-    expect(screen.getByText('Metrics online')).toBeInTheDocument();
+    expect(screen.getByText('Polling metrics')).toBeInTheDocument();
+    expect(await screen.findByText('Metrics online')).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/dashboard-metrics',
+      expect.objectContaining({
+        headers: {
+          accept: 'application/json',
+        },
+        method: 'GET',
+      })
+    );
     expect(within(metricCard('Partition Count')).getByText('9')).toBeInTheDocument();
     expect(within(metricCard('Broker Signal')).getByText('3')).toBeInTheDocument();
     expect(within(metricCard('Log End Offset')).getByText('12,500')).toBeInTheDocument();
@@ -84,12 +91,8 @@ describe('Home dashboard', () => {
     );
   });
 
-  it('shows the polling state while the GraphQL query is loading', () => {
-    useQuery.mockReturnValue({
-      data: undefined,
-      error: undefined,
-      loading: true,
-    });
+  it('keeps the polling state while the metrics request is pending', () => {
+    fetch.mockImplementation(() => new Promise(() => {}));
 
     render(<Home />);
 
@@ -98,16 +101,18 @@ describe('Home dashboard', () => {
     expect(within(metricCard('Broker Signal')).getByText('0')).toBeInTheDocument();
   });
 
-  it('shows the unavailable state without dropping the dashboard layout', () => {
-    useQuery.mockReturnValue({
-      data: undefined,
-      error: new Error('Prometheus down'),
-      loading: false,
+  it('shows the unavailable state without dropping the dashboard layout', async () => {
+    fetch.mockResolvedValue({
+      json: () => Promise.resolve({ error: 'Prometheus unavailable' }),
+      ok: false,
+      status: 502,
     });
 
     render(<Home />);
 
-    expect(screen.getByText('Prometheus unavailable')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText('Prometheus unavailable')).toBeInTheDocument()
+    );
     expect(screen.getByLabelText('Kafka metrics')).toBeInTheDocument();
     expect(screen.getByLabelText('Kafka snapshots')).toBeInTheDocument();
   });

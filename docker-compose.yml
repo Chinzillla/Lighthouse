@@ -4,8 +4,9 @@ services:
       context: .
     environment:
       PROMETHEUS_API: http://prometheus:9090
+      PROMETHEUS_ALLOWED_HOSTS: prometheus:9090
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - prometheus
     restart: unless-stopped
@@ -18,7 +19,7 @@ services:
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     depends_on:
       - kafka-metrics
     restart: unless-stopped
@@ -36,7 +37,7 @@ services:
       KAFKA_SASL_PASSWORD: ${KAFKA_SASL_PASSWORD:-}
       METRICS_PORT: 9308
     ports:
-      - "9308:9308"
+      - "127.0.0.1:9308:9308"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped

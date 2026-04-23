@@ -20,8 +20,8 @@ Deliverable: a stable dashboard branch that passes lint, tests, and build.
 Goal: reduce framework risk before the replay engine grows.
 
 - Upgrade from Next 12 to a supported Next.js release
-- Replace Apollo Server v3 packages with a maintained GraphQL route implementation
-- Re-run Docker, unit, build, and Cypress checks after the migration
+- Replace deprecated API packages with a fetch-based metrics route
+- Re-run Docker, unit, build, and Playwright checks after the migration
 
 Deliverable: production dependency audit findings are resolved without changing
 the user-facing workflow.
@@ -108,4 +108,4 @@ Deliverable: controlled replay for failure windows instead of only known offsets
 - Schema Registry integration
 - Exactly-once replay guarantees
 - Kubernetes deployment
-- AI summaries or root cause generation
+- Automated summaries or root cause generation

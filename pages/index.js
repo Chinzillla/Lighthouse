@@ -1,4 +1,4 @@
-import { useQuery } from '@apollo/client';
+import { useEffect, useState } from 'react';
 import styles from '../styles/Home.module.css';
 import NavBar from '../components/Navbar/navbar';
 import BrokerSignal from '../components/Graphs/BrokerSignal.jsx';
@@ -7,17 +7,75 @@ import LogEndOffset from '../components/Graphs/LogEndOffset.jsx';
 import MetricsExporterStatus from '../components/Graphs/MetricsExporterStatus.jsx';
 import PartitionCount from '../components/Graphs/PartitionCount.jsx';
 import TopicInventoryChart from '../components/Graphs/TopicInventoryChart.jsx';
-import gqlQueries from '../queries.jsx';
 
 const POLL_INTERVAL_MS = 5000;
 
+const EMPTY_METRICS = {};
+
 export default function Home() {
-  const { data, error, loading } = useQuery(gqlQueries.dashboardMetrics, {
-    notifyOnNetworkStatusChange: true,
-    pollInterval: POLL_INTERVAL_MS,
+  const [{ error, loading, metrics }, setMetricsState] = useState({
+    error: null,
+    loading: true,
+    metrics: EMPTY_METRICS,
   });
 
-  const metrics = data?.dashboardMetrics ?? {};
+  useEffect(() => {
+    let isMounted = true;
+    let currentController;
+
+    async function loadDashboardMetrics() {
+      if (currentController) {
+        currentController.abort();
+      }
+
+      currentController = new AbortController();
+
+      try {
+        const response = await fetch('/api/dashboard-metrics', {
+          headers: {
+            accept: 'application/json',
+          },
+          method: 'GET',
+          signal: currentController.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error('Metrics request failed');
+        }
+
+        const payload = await response.json();
+
+        if (!isMounted) return;
+
+        setMetricsState({
+          error: null,
+          loading: false,
+          metrics: payload.dashboardMetrics ?? EMPTY_METRICS,
+        });
+      } catch (requestError) {
+        if (requestError.name === 'AbortError' || !isMounted) return;
+
+        setMetricsState((currentState) => ({
+          error: requestError,
+          loading: false,
+          metrics: currentState.metrics ?? EMPTY_METRICS,
+        }));
+      }
+    }
+
+    loadDashboardMetrics();
+
+    const interval = setInterval(loadDashboardMetrics, POLL_INTERVAL_MS);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+
+      if (currentController) {
+        currentController.abort();
+      }
+    };
+  }, []);
 
   const apiStatus = error
     ? 'Prometheus unavailable'

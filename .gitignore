@@ -7,8 +7,8 @@ node_modules
 
 # testing
 /coverage
-/cypress/screenshots
-/cypress/videos
+/playwright-report
+/test-results
 
 # next.js
 /.next/

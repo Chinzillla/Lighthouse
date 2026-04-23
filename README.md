@@ -14,12 +14,12 @@ and tests.
 Implemented today:
 
 - Next.js dashboard for Kafka cluster metrics exposed through Prometheus
-- GraphQL API route that proxies Prometheus queries from the server
+- Fetch-based API route that proxies Prometheus queries from the server
 - Responsive operations console for broker, partition, topic, and offset signals
 - Local Docker Kafka stack with three brokers, Prometheus, and a demo producer
 - Kafka metrics exporter that supports local Kafka and SASL/SSL clusters
 - Jest component tests
-- GitHub Actions workflow for lint, test, and build
+- GitHub Actions workflow for dependency audit, lint, tests, build, and Docker checks
 - Multi-stage Dockerfile and Docker Compose support
 
 Planned next:
@@ -35,9 +35,8 @@ Planned next:
 ```text
 Browser
   -> Next.js page
-  -> Apollo Client
-  -> /api/graphql
-  -> PrometheusAPI data source
+  -> /api/dashboard-metrics
+  -> Prometheus fetch client
   -> Prometheus HTTP API
 ```
 
@@ -137,13 +136,14 @@ Use this when working on the Next.js app itself.
 
 Prerequisites:
 
-- Node.js 20
+- Node.js 24
 - npm
 
 Install dependencies:
 
 ```bash
 npm ci
+npx playwright install chromium
 ```
 
 Run the app locally:
@@ -153,6 +153,8 @@ npm run dev
 ```
 
 If Prometheus is running locally, set `PROMETHEUS_API=http://localhost:9090`.
+For non-local deployments, set `PROMETHEUS_ALLOWED_HOSTS` to a comma-separated
+list of approved Prometheus hosts such as `prometheus:9090`.
 On PowerShell:
 
 ```powershell
@@ -171,16 +173,18 @@ Run these before opening a pull request:
 npm run lint
 npm run test:ci
 npm run build
+npm run e2e
 ```
 
 The same checks run in GitHub Actions on pull requests and pushes to `main`,
-`feature/**`, `fix/**`, or `chore/**` branches. Cypress runs against the built
-Next.js app in CI.
+`feature/**`, `fix/**`, or `chore/**` branches. Playwright runs against the
+built Next.js app in CI.
 
-For local end-to-end checks, start the app first and then run:
+For local end-to-end checks, build the app first and then run:
 
 ```bash
-npm run cypress:run
+npm run build
+npm run e2e
 ```
 
 ## Branching Workflow
