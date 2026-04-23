@@ -84,6 +84,27 @@ test.describe('Lighthouse operations console', () => {
     ).toBeVisible();
   });
 
+  test('keeps snapshot charts bounded inside the dashboard', async ({ page }) => {
+    await stubDashboardMetrics(page);
+
+    const layout = await page.evaluate(() => ({
+      bodyHeight: document.body.scrollHeight,
+      chartPanels: Array.from(
+        document.querySelectorAll('[aria-label="Kafka snapshots"] article')
+      ).map((panel) => ({
+        height: panel.getBoundingClientRect().height,
+        canvasHeight: panel.querySelector('canvas')?.getBoundingClientRect().height,
+      })),
+    }));
+
+    expect(layout.bodyHeight).toBeLessThan(1400);
+    expect(layout.chartPanels).toHaveLength(2);
+    layout.chartPanels.forEach((panel) => {
+      expect(panel.height).toBeLessThanOrEqual(380);
+      expect(panel.canvasHeight).toBeLessThanOrEqual(300);
+    });
+  });
+
   test('shows Prometheus unavailable when the metrics API fails', async ({ page }) => {
     await page.route('**/api/dashboard-metrics', (route) =>
       route.fulfill({

@@ -205,14 +205,15 @@
 }
 
 .chartPanel {
-  min-height: 360px;
+  height: 360px;
   padding: 20px;
 }
 
 .chartPanel section {
-  display: grid;
-  grid-template-rows: auto minmax(240px, 1fr);
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  min-height: 0;
 }
 
 .chartPanel section > div:first-child {
@@ -233,6 +234,20 @@
   color: #71796f;
   font-size: 0.85rem;
   font-weight: 700;
+}
+
+.chartViewport {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chartViewport canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .roadmapBand {

@@ -8,6 +8,7 @@ import {
   Tooltip,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import styles from '../../styles/Home.module.css';
 
 Chart.register(
   BarElement,
@@ -31,48 +32,50 @@ function MetricLineChart({ label, value, borderColor, backgroundColor }) {
         <h3>{label}</h3>
         <span>current sample</span>
       </div>
-      <Bar
-        data={{
-          labels: ['current'],
-          datasets: [
-            {
-              label,
-              data: [currentValue],
-              backgroundColor,
-              borderColor,
-              borderWidth: 2,
-              borderRadius: 6,
-            },
-          ],
-        }}
-        options={{
-          animation: false,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false,
-            },
-            tooltip: {
-              intersect: false,
-              mode: 'index',
-            },
-          },
-          responsive: true,
-          scales: {
-            x: {
-              grid: {
+      <div className={styles.chartViewport}>
+        <Bar
+          data={{
+            labels: ['current'],
+            datasets: [
+              {
+                label,
+                data: [currentValue],
+                backgroundColor,
+                borderColor,
+                borderWidth: 2,
+                borderRadius: 6,
+              },
+            ],
+          }}
+          options={{
+            animation: false,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
                 display: false,
               },
-            },
-            y: {
-              beginAtZero: true,
-              ticks: {
-                precision: 0,
+              tooltip: {
+                intersect: false,
+                mode: 'index',
               },
             },
-          },
-        }}
-      />
+            responsive: true,
+            scales: {
+              x: {
+                grid: {
+                  display: false,
+                },
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  precision: 0,
+                },
+              },
+            },
+          }}
+        />
+      </div>
     </section>
   );
 }
