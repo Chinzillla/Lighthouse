@@ -1,0 +1,14 @@
+.git
+.github
+.next
+.env
+.env.*
+coverage
+node_modules
+npm-debug.log
+Dockerfile
+Dockerfile.tools
+docker-compose.yml
+docker-compose.local-kafka.yml
+README.md
+GithubImages

@@ -1,0 +1,15 @@
+FROM node:24-alpine
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+RUN addgroup -S nodejs && adduser -S lighthouse -G nodejs
+
+COPY --chown=lighthouse:nodejs tools ./tools
+
+USER lighthouse
+EXPOSE 9308
+CMD ["node", "tools/kafka-metrics-exporter.js"]

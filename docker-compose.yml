@@ -1,0 +1,55 @@
+services:
+  lighthouse:
+    build:
+      context: .
+    environment:
+      PROMETHEUS_API: http://prometheus:9090
+      PROMETHEUS_ALLOWED_HOSTS: prometheus:9090
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=2h"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - kafka-metrics
+    restart: unless-stopped
+
+  kafka-metrics:
+    build:
+      context: .
+      dockerfile: Dockerfile.tools
+    environment:
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-host.docker.internal:9092}
+      KAFKA_CLIENT_ID: ${KAFKA_CLIENT_ID:-lighthouse-metrics}
+      KAFKA_SSL: ${KAFKA_SSL:-}
+      KAFKA_SASL_MECHANISM: ${KAFKA_SASL_MECHANISM:-plain}
+      KAFKA_SASL_USERNAME: ${KAFKA_SASL_USERNAME:-}
+      KAFKA_SASL_PASSWORD: ${KAFKA_SASL_PASSWORD:-}
+      METRICS_PORT: 9308
+    ports:
+      - "127.0.0.1:9308:9308"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:9308/metrics').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped

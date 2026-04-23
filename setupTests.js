@@ -1,5 +1,5 @@
-import '@testing-library/jest-dom/extend-expect';
-import fetchMock from 'jest-fetch-mock';
+const fetchMock = require('jest-fetch-mock');
 
-// Configure jest-fetch-mock
+require('@testing-library/jest-dom');
+
 fetchMock.enableMocks();

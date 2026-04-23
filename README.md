@@ -1,128 +1,219 @@
 # Lighthouse
-<p>
-<img src="https://github.com/oslabs-beta/Lighthouse/blob/main/GithubImages/Lighthouse-github-header-img.png" title="lighthouse"/>&nbsp;
-<p> 
-<div align="center">
-<a href="https://github.com/oslabs-beta/Lighthouse"><img src="https://img.shields.io/badge/license-MIT-blue"/></a>
-<a href="https://github.com/oslabs-beta/Lighthouse/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/oslabs-beta/Lighthouse"></a>
-<a href="https://github.com/oslabs-beta/Lighthouse/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/oslabs-beta/Lighthouse"></a>
 
-<strong> A minimal, light-weight Kafka cluster monitoring tool built on Next.js. </strong> 
-</div>
+Lighthouse is a Kafka debugging workbench in active rebuild. The current
+application is a read-only Kafka metrics console backed by Prometheus and
+Next.js. The roadmap expands it into a safe replay engine for inspecting and
+replaying Kafka event windows into sandbox topics.
 
- 
-Lighthouse is a lightweight, open-source developer tool useful for monitoring Kafka clusters - in <strong>real</strong> time. It provides a responsive dashboard view of essential performance metrics for visualizing Kafka cluster health. 
+The rebuild is intentionally incremental: stabilize the existing dashboard,
+add CI and Docker support, then build replay functionality behind clear APIs
+and tests.
 
-Soon to be Typescript integrated.
+## Current Scope
 
+Implemented today:
 
-## Table of Contents
+- Next.js dashboard for Kafka cluster metrics exposed through Prometheus
+- Fetch-based API route that proxies Prometheus queries from the server
+- Responsive operations console for broker, partition, topic, and offset signals
+- Local Docker Kafka stack with three brokers, Prometheus, and a demo producer
+- Kafka metrics exporter that supports local Kafka and SASL/SSL clusters
+- Jest component tests
+- GitHub Actions workflow for dependency audit, lint, tests, build, and Docker checks
+- Multi-stage Dockerfile and Docker Compose support
 
-1. [How It Works](#how-it-works)
-1. [Getting Started](#getting-started)
-1. [Under the Hood](#under-the-hood)
-1. [Stretch Goals](#stretch-goals)
-1. [Contributors](#contributors)
-1. [License](#license)
+Planned next:
 
+- Offset-range Kafka replay CLI
+- Dry-run preview and replay metadata headers
+- Persistent replay job model
+- REST API for replay job creation, status, preview, and cancellation
+- Minimal UI for replay creation and job monitoring
 
-## How It Works
+## Architecture
 
-  Lighthouse helps you see metrics that matter by utilizing a predefined set of GraphQL parameters to query a Prometheus server, allowing Kafka cluster usage data to directly render in a minimal graphical interface. With the goal of capitalizing on Kafka's on-demand consumer threading, which gives immediate access to the producer threads, Lighthouse's goal is to provide the developer with on-time metrics to allow for immediate system analysis. 
-
-<p align="center">
-<img src="https://github.com/oslabs-beta/Lighthouse/blob/main/GithubImages/lighthouse-demo.gif"/>
-</p>
-
-
-## Getting Started
-
-Before using the application, the user should have a Confluent Kafka cluster up and running, as well as a Prometheus server connected. Afterwards, it's as easy as inputting the Prometheus endpoint into your process.env variables.
-
-1. Install
-```javascript
-npm install;
-```
-2. Confluent Cloud kafka cluster setup (https://developer.confluent.io/quickstart/kafka-on-confluent-cloud/)
-3. Prometheus Server setup (https://prometheus.io/)
-4. Create a process.env and input your Prometheus endpoints corresponding to the API variables within the components.
-5. Run Build & Start
-```javascript
-npm run build;
-npm start;
+```text
+Browser
+  -> Next.js page
+  -> /api/dashboard-metrics
+  -> Prometheus fetch client
+  -> Prometheus HTTP API
 ```
 
-To run Lighthouse within a Docker container based on the image provided, follow these steps.
+The frontend never calls Prometheus directly. Prometheus access stays on the
+server side through `PROMETHEUS_API`.
 
-1. Open Docker (make sure local Docker client is up to date with the latest version)
-2. Build Docker Image
-```javascript
-docker build -t lighthouse-app .
+## Quick Start
+
+Choose one of three run modes:
+
+1. local sample Kafka cluster for demos
+2. existing Kafka endpoint
+3. Confluent Cloud cluster
+
+The default demo does not require a Google VM, Confluent Cloud account, or
+pre-existing Kafka infrastructure.
+
+### Option 1: Lighthouse With Sample Kafka
+
+Use this when you want the full demo environment on your machine.
+
+Prerequisite:
+
+- Docker Desktop or Docker Engine
+
+Start Lighthouse with a local three-broker Kafka cluster, seeded topics,
+sample producer, metrics exporter, and Prometheus:
+
+```bash
+npm run docker:sample
 ```
-3. Run the image as a Docker container
-```javascript
-docker run -p 3000:3000 lighthouse-app
+
+Open:
+
+- Lighthouse UI: `http://localhost:3000`
+- Prometheus: `http://localhost:9090`
+- Kafka exporter metrics: `http://localhost:9308/metrics`
+
+The local cluster exposes these host bootstrap ports:
+
+```text
+localhost:19092,localhost:19093,localhost:19094
 ```
 
+### Option 2: Lighthouse With Existing Kafka
 
-## Under The Hood
-Built with Next.js, GraphQL, Apollo, Prometheus, and Docker.
-<p align="center">
-<img src="https://github.com/devicons/devicon/blob/master/icons/prometheus/prometheus-original-wordmark.svg" title="Prometheus" alt="Prometheus" width="50" height="40"/>&nbsp;
-<img src="https://github.com/devicons/devicon/blob/master/icons/graphql/graphql-plain-wordmark.svg" title="GraphQL" alt="GraphQL" width="50" height="40"/>&nbsp;
-<img src="https://github.com/devicons/devicon/blob/master/icons/nextjs/nextjs-original-wordmark.svg" title="NextJS" alt="NextJS" width="50" height="40"/>&nbsp;
-<img src="https://github.com/devicons/devicon/blob/master/icons/docker/docker-original-wordmark.svg" title="Docker" alt="Docker" width="50" height="40"/>&nbsp;
-<img src="https://github.com/devicons/devicon/blob/master/icons/react/react-original-wordmark.svg" title="React" alt="React" width="50" height="40"/>&nbsp;
-</p>
+Use this when you already have a plain Kafka-compatible cluster.
 
-## Stretch Goals
-- Typescript Codebase
-- Prometheus Endpoint input feature
-- Customizable graphical components
+Create a local `.env` file:
 
-## Contributors
-We are always open to collaborating and building together! Reach out with features you'd like to see.
-<table align="center"><tbody><tr>
-  <td align="center" width="150">
-    <img src="https://github.com/oslabs-beta/Lighthouse/blob/main/GithubImages/andy-profile-pic.jpg" style="height: 5rem; width: 5rem;" />
-    <br/>
-    <strong>Andy Kuang</strong>
-    <br/>
-    <a href="https://github.com/Aku15">GitHub</a>
-    <br/>
-    <a href="https://www.linkedin.com/in/andy-kuang-156318221/">LinkedIn</a>
-  </td>
-  <td align="center" width="150">
-    <img src="https://github.com/oslabs-beta/Lighthouse/blob/main/GithubImages/Zaw-profile-pic.jpeg" style="height: 5rem; width: 5rem;" />
-    <br/>
-    <strong>Zaw Win</strong>
-    <br/>
-    <a href="https://github.com/hbkw510">GitHub</a>
-    <br/>
-    <a href="https://www.linkedin.com/in/zawnwin/">LinkedIn</a>
-  </td>
-  <td align="center" width="150">
-    <img src="https://github.com/oslabs-beta/Lighthouse/blob/main/GithubImages/Christian-profile.jpeg" style="height: 5rem; width: 5rem;" />
-    <br/>
-    <strong>Christian Springer</strong>
-    <br/>
-    <a href="https://github.com/christianspringer-ux">GitHub</a>
-    <br/>
-    <a href="https://www.linkedin.com/in/christian-springer0/">LinkedIn</a>
-  </td>
-  <td align="center" width="150">
-    <img src="https://github.com/oslabs-beta/Lighthouse/blob/main/GithubImages/Brandon-profile-pic.jpeg" style="height: 5rem; width: 5rem;" />
-    <br/>
-    <strong>Brandon Chin</strong>
-    <br/>
-    <a href="https://github.com/chitangchin">GitHub</a>
-    <br/>
-    <a href="https://www.linkedin.com/in/chitangchin/">LinkedIn</a>
-  </td>
-</tr></tbody></table>
+```env
+KAFKA_BROKERS=broker1:9092,broker2:9092
+KAFKA_SSL=false
+KAFKA_SASL_USERNAME=
+KAFKA_SASL_PASSWORD=
+```
 
-# License
+If Kafka is running directly on your host machine and the exporter is running
+through Docker Compose, use `host.docker.internal:9092` instead of
+`localhost:9092`.
 
-This product is licensed under the MIT License without restriction.
+Start Lighthouse, Prometheus, and the Kafka metrics exporter:
 
+```bash
+npm run docker:external
+```
 
+Open `http://localhost:3000`.
+
+### Option 3: Lighthouse With Confluent Cloud
+
+Use this when your Kafka cluster is hosted on Confluent Cloud.
+
+Create a local `.env` file:
+
+```env
+KAFKA_BROKERS=pkc-example.us-east-1.aws.confluent.cloud:9092
+KAFKA_SSL=true
+KAFKA_SASL_MECHANISM=plain
+KAFKA_SASL_USERNAME=<confluent-api-key>
+KAFKA_SASL_PASSWORD=<confluent-api-secret>
+```
+
+Then start Lighthouse:
+
+```bash
+npm run docker:external
+```
+
+Open `http://localhost:3000`.
+
+Do not commit real Confluent credentials. `.env` is ignored by git.
+
+## Local Development
+
+Use this when working on the Next.js app itself.
+
+Prerequisites:
+
+- Node.js 24
+- npm
+
+Install dependencies:
+
+```bash
+npm ci
+npx playwright install chromium
+```
+
+Run the app locally:
+
+```bash
+npm run dev
+```
+
+If Prometheus is running locally, set `PROMETHEUS_API=http://localhost:9090`.
+For non-local deployments, set `PROMETHEUS_ALLOWED_HOSTS` to a comma-separated
+list of approved Prometheus hosts such as `prometheus:9090`.
+On PowerShell:
+
+```powershell
+$env:PROMETHEUS_API="http://localhost:9090"
+$env:PROMETHEUS_ALLOWED_HOSTS="localhost:9090"
+npm.cmd run dev
+```
+
+See [docs/KAFKA_CONFIGURATION.md](docs/KAFKA_CONFIGURATION.md) for the full
+Kafka configuration guide.
+
+## Quality Gates
+
+Run these before opening a pull request:
+
+```bash
+npm run lint
+npm run test:ci
+npm run build
+npm run e2e
+```
+
+Use the combined local gate when you do not need the browser check:
+
+```bash
+npm run verify
+```
+
+The same checks run in GitHub Actions on pull requests and pushes to `main`,
+`feature/**`, `fix/**`, or `chore/**` branches. Playwright runs against the
+built Next.js app in CI.
+
+For local end-to-end checks, build the app first and then run:
+
+```bash
+npm run build
+npm run e2e
+```
+
+Validate Docker Compose files locally:
+
+```bash
+npm run docker:config
+```
+
+## Branching Workflow
+
+- `main` should stay releasable.
+- Feature work should happen on short-lived branches such as
+  `feature/revamp-foundation`, `feature/replay-cli`, or `fix/prometheus-errors`.
+- Each branch should keep a focused scope and pass CI before merge.
+- Larger work should be split into small commits that map to the roadmap.
+
+## Roadmap
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the phased rebuild plan.
+See [docs/OPERATIONS.md](docs/OPERATIONS.md) for local run modes, health
+checks, and troubleshooting.
+
+## License
+
+This project is licensed under the MIT License.
