@@ -1,6 +1,6 @@
 import { gql, ApolloServer } from "apollo-server-micro";
 import { ApolloServerPluginLandingPageLocalDefault } from "apollo-server-core";
-import { PrometheusAPI } from "./prometheusAPI";
+import { PrometheusAPI } from "../../lib/prometheusAPI";
 
 const typeDefs = gql`
   type DashboardMetrics {

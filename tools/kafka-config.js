@@ -2,7 +2,7 @@ const { Kafka, logLevel } = require('kafkajs');
 const fs = require('fs');
 const path = require('path');
 
-function loadDotEnv(filePath = path.join(process.cwd(), '.env')) {
+function loadDotEnv(filePath = path.join(process.cwd(), '.env'), targetEnv = process.env) {
   if (!fs.existsSync(filePath)) return;
 
   const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
@@ -18,8 +18,8 @@ function loadDotEnv(filePath = path.join(process.cwd(), '.env')) {
     const rawValue = trimmedLine.slice(separatorIndex + 1).trim();
     const value = rawValue.replace(/^["']|["']$/g, '');
 
-    if (key && process.env[key] === undefined) {
-      process.env[key] = value;
+    if (key && targetEnv[key] === undefined) {
+      targetEnv[key] = value;
     }
   });
 }
@@ -74,6 +74,7 @@ function createKafka(env = process.env) {
 module.exports = {
   buildKafkaConfig,
   createKafka,
+  loadDotEnv,
   parseBoolean,
   parseBrokers,
 };

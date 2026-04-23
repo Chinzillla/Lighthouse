@@ -54,6 +54,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate Docker Compose configs
+        run: |
+          docker compose -f docker-compose.yml config
+          docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml config
+
       - name: Build app image
         run: docker build -t lighthouse-app:test .
 

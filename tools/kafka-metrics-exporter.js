@@ -19,11 +19,11 @@ function renderMetric(name, value, labels = {}) {
   return `${name}${renderedLabels} ${Number(value) || 0}`;
 }
 
-async function collectKafkaMetrics() {
+async function collectKafkaMetrics(kafkaFactory = createKafka, env = process.env) {
   const startedAt = Date.now();
-  const kafka = createKafka({
-    ...process.env,
-    KAFKA_CLIENT_ID: process.env.KAFKA_CLIENT_ID || 'lighthouse-metrics',
+  const kafka = kafkaFactory({
+    ...env,
+    KAFKA_CLIENT_ID: env.KAFKA_CLIENT_ID || 'lighthouse-metrics',
   });
   const admin = kafka.admin();
 
@@ -119,7 +119,7 @@ async function collectKafkaMetrics() {
 }
 
 function renderErrorMetrics(error) {
-  const message = escapeLabel(error.message || 'unknown error');
+  const message = error.message || 'unknown error';
 
   return [
     '# HELP lighthouse_kafka_exporter_up Whether the Lighthouse Kafka exporter can reach Kafka.',
@@ -129,27 +129,48 @@ function renderErrorMetrics(error) {
   ].join('\n');
 }
 
-const server = http.createServer(async (request, response) => {
-  if (request.url !== '/metrics') {
-    response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-    response.end('Not found\n');
-    return;
-  }
+function createMetricsServer({ collectMetrics = collectKafkaMetrics } = {}) {
+  return http.createServer(async (request, response) => {
+    if (request.url !== '/metrics') {
+      response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+      response.end('Not found\n');
+      return;
+    }
 
-  try {
-    const metrics = await collectKafkaMetrics();
-    response.writeHead(200, {
-      'content-type': 'text/plain; version=0.0.4; charset=utf-8',
-    });
-    response.end(metrics);
-  } catch (error) {
-    response.writeHead(200, {
-      'content-type': 'text/plain; version=0.0.4; charset=utf-8',
-    });
-    response.end(renderErrorMetrics(error));
-  }
-});
+    try {
+      const metrics = await collectMetrics();
+      response.writeHead(200, {
+        'content-type': 'text/plain; version=0.0.4; charset=utf-8',
+      });
+      response.end(metrics);
+    } catch (error) {
+      response.writeHead(200, {
+        'content-type': 'text/plain; version=0.0.4; charset=utf-8',
+      });
+      response.end(renderErrorMetrics(error));
+    }
+  });
+}
 
-server.listen(METRICS_PORT, '0.0.0.0', () => {
-  console.log(`Kafka metrics exporter listening on :${METRICS_PORT}/metrics`);
-});
+function startMetricsServer({ port = METRICS_PORT, host = '0.0.0.0' } = {}) {
+  const server = createMetricsServer();
+
+  server.listen(port, host, () => {
+    console.log(`Kafka metrics exporter listening on :${port}/metrics`);
+  });
+
+  return server;
+}
+
+if (require.main === module) {
+  startMetricsServer();
+}
+
+module.exports = {
+  collectKafkaMetrics,
+  createMetricsServer,
+  escapeLabel,
+  renderErrorMetrics,
+  renderMetric,
+  startMetricsServer,
+};
