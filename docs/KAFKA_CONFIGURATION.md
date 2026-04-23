@@ -11,7 +11,7 @@ Use this for demos and local development. It does not require a hosted Kafka
 cluster.
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml up --build
+npm run docker:sample
 ```
 
 This starts:
@@ -23,7 +23,7 @@ This starts:
 - Prometheus
 - Lighthouse UI
 
-Host ports:
+Host ports are bound to `127.0.0.1` for local development:
 
 - Lighthouse UI: `3000`
 - Prometheus: `9090`
@@ -60,7 +60,7 @@ inside Docker Compose, use `host.docker.internal:9092` instead of
 Then run:
 
 ```bash
-docker compose up --build
+npm run docker:external
 ```
 
 For local Node development, run the exporter directly:
@@ -88,7 +88,7 @@ Do not commit real API keys or secrets.
 Then run:
 
 ```bash
-docker compose up --build
+npm run docker:external
 ```
 
 ## Exported Metrics

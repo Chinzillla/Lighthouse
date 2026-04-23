@@ -12,9 +12,14 @@ const POLL_INTERVAL_MS = 5000;
 
 const EMPTY_METRICS = {};
 
+function hasDashboardMetrics(metrics) {
+  return Object.keys(metrics).length > 0;
+}
+
 export default function Home() {
-  const [{ error, loading, metrics }, setMetricsState] = useState({
+  const [{ error, lastUpdatedAt, loading, metrics }, setMetricsState] = useState({
     error: null,
+    lastUpdatedAt: null,
     loading: true,
     metrics: EMPTY_METRICS,
   });
@@ -39,16 +44,21 @@ export default function Home() {
           signal: currentController.signal,
         });
 
-        if (!response.ok) {
-          throw new Error('Metrics request failed');
-        }
-
         const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.error || 'Metrics request failed');
+        }
 
         if (!isMounted) return;
 
         setMetricsState({
           error: null,
+          lastUpdatedAt: new Date().toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          }),
           loading: false,
           metrics: payload.dashboardMetrics ?? EMPTY_METRICS,
         });
@@ -57,6 +67,7 @@ export default function Home() {
 
         setMetricsState((currentState) => ({
           error: requestError,
+          lastUpdatedAt: currentState.lastUpdatedAt,
           loading: false,
           metrics: currentState.metrics ?? EMPTY_METRICS,
         }));
@@ -82,6 +93,7 @@ export default function Home() {
     : loading
     ? 'Polling metrics'
     : 'Metrics online';
+  const isMetricsUnavailable = Boolean(error) && !hasDashboardMetrics(metrics);
 
   return (
     <div className={styles.page}>
@@ -98,11 +110,16 @@ export default function Home() {
             </p>
           </div>
 
-          <aside className={styles.statusPanel} aria-label="Runtime status">
+          <aside
+            className={styles.statusPanel}
+            aria-label="Runtime status"
+            aria-live="polite"
+          >
             <div>
               <span className={error ? styles.statusBad : styles.statusOk} />
               <p>{apiStatus}</p>
             </div>
+            {error ? <p className={styles.statusDetail}>{error.message}</p> : null}
             <dl>
               <div>
                 <dt>Refresh</dt>
@@ -113,8 +130,8 @@ export default function Home() {
                 <dd>Prometheus</dd>
               </div>
               <div>
-                <dt>Mode</dt>
-                <dd>Read-only</dd>
+                <dt>Last sample</dt>
+                <dd>{lastUpdatedAt ?? 'Waiting'}</dd>
               </div>
             </dl>
           </aside>
@@ -122,25 +139,43 @@ export default function Home() {
 
         <section className={styles.metricGrid} id="metrics" aria-label="Kafka metrics">
           <article className={styles.metricCard}>
-            <PartitionCount results={metrics.partitionCount} />
+            <PartitionCount
+              isUnavailable={isMetricsUnavailable}
+              results={metrics.partitionCount}
+            />
           </article>
           <article className={styles.metricCard}>
-            <BrokerSignal value={metrics.brokerCount} />
+            <BrokerSignal
+              isUnavailable={isMetricsUnavailable}
+              value={metrics.brokerCount}
+            />
           </article>
           <article className={styles.metricCard}>
-            <LogEndOffset value={metrics.totalLogEndOffset} />
+            <LogEndOffset
+              isUnavailable={isMetricsUnavailable}
+              value={metrics.totalLogEndOffset}
+            />
           </article>
           <article className={styles.metricCard}>
-            <MetricsExporterStatus value={metrics.exporterUp} />
+            <MetricsExporterStatus
+              isUnavailable={isMetricsUnavailable}
+              value={metrics.exporterUp}
+            />
           </article>
         </section>
 
         <section className={styles.chartGrid} aria-label="Kafka snapshots">
           <article className={styles.chartPanel}>
-            <KafkaActivityChart value={metrics.totalLogEndOffset} />
+            <KafkaActivityChart
+              isUnavailable={isMetricsUnavailable}
+              value={metrics.totalLogEndOffset}
+            />
           </article>
           <article className={styles.chartPanel}>
-            <TopicInventoryChart value={metrics.topicCount} />
+            <TopicInventoryChart
+              isUnavailable={isMetricsUnavailable}
+              value={metrics.topicCount}
+            />
           </article>
         </section>
 

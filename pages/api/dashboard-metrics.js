@@ -1,5 +1,19 @@
 import { getDashboardMetrics } from '../../lib/prometheusAPI';
 
+function toDashboardError(error) {
+  const message = error?.message || '';
+
+  if (
+    message.startsWith('PROMETHEUS_API') ||
+    message.includes('not allowed') ||
+    message.includes('timed out')
+  ) {
+    return message;
+  }
+
+  return 'Prometheus metrics are unavailable';
+}
+
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
 
@@ -14,7 +28,9 @@ export default async function handler(request, response) {
     response.status(200).json({ dashboardMetrics });
   } catch (error) {
     response.status(502).json({
-      error: error.message || 'Prometheus metrics are unavailable',
+      error: toDashboardError(error),
     });
   }
 }
+
+export { toDashboardError };

@@ -66,7 +66,7 @@ Start Lighthouse with a local three-broker Kafka cluster, seeded topics,
 sample producer, metrics exporter, and Prometheus:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml up --build
+npm run docker:sample
 ```
 
 Open:
@@ -101,7 +101,7 @@ through Docker Compose, use `host.docker.internal:9092` instead of
 Start Lighthouse, Prometheus, and the Kafka metrics exporter:
 
 ```bash
-docker compose up --build
+npm run docker:external
 ```
 
 Open `http://localhost:3000`.
@@ -123,7 +123,7 @@ KAFKA_SASL_PASSWORD=<confluent-api-secret>
 Then start Lighthouse:
 
 ```bash
-docker compose up --build
+npm run docker:external
 ```
 
 Open `http://localhost:3000`.
@@ -159,6 +159,7 @@ On PowerShell:
 
 ```powershell
 $env:PROMETHEUS_API="http://localhost:9090"
+$env:PROMETHEUS_ALLOWED_HOSTS="localhost:9090"
 npm.cmd run dev
 ```
 
@@ -176,6 +177,12 @@ npm run build
 npm run e2e
 ```
 
+Use the combined local gate when you do not need the browser check:
+
+```bash
+npm run verify
+```
+
 The same checks run in GitHub Actions on pull requests and pushes to `main`,
 `feature/**`, `fix/**`, or `chore/**` branches. Playwright runs against the
 built Next.js app in CI.
@@ -185,6 +192,12 @@ For local end-to-end checks, build the app first and then run:
 ```bash
 npm run build
 npm run e2e
+```
+
+Validate Docker Compose files locally:
+
+```bash
+npm run docker:config
 ```
 
 ## Branching Workflow
@@ -198,6 +211,8 @@ npm run e2e
 ## Roadmap
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the phased rebuild plan.
+See [docs/OPERATIONS.md](docs/OPERATIONS.md) for local run modes, health
+checks, and troubleshooting.
 
 ## License
 

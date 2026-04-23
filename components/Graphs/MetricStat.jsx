@@ -1,3 +1,5 @@
+import styles from '../../styles/Home.module.css';
+
 function formatMetricValue(value) {
   if (value === null || value === undefined || value === '') return '0';
 
@@ -9,11 +11,13 @@ function formatMetricValue(value) {
   }).format(numericValue);
 }
 
-export default function MetricStat({ label, value, helperText }) {
+export default function MetricStat({ isUnavailable = false, label, value, helperText }) {
   return (
     <div>
       <p>{label}</p>
-      <strong>{formatMetricValue(value)}</strong>
+      <strong className={isUnavailable ? styles.metricUnavailable : undefined}>
+        {isUnavailable ? 'Unavailable' : formatMetricValue(value)}
+      </strong>
       {helperText ? <span>{helperText}</span> : null}
     </div>
   );

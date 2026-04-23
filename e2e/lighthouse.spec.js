@@ -108,7 +108,7 @@ test.describe('Lighthouse operations console', () => {
   test('shows Prometheus unavailable when the metrics API fails', async ({ page }) => {
     await page.route('**/api/dashboard-metrics', (route) =>
       route.fulfill({
-        body: JSON.stringify({ error: 'Prometheus unavailable' }),
+        body: JSON.stringify({ error: 'Prometheus metrics are unavailable' }),
         contentType: 'application/json',
         status: 500,
       })
@@ -116,7 +116,9 @@ test.describe('Lighthouse operations console', () => {
 
     await page.goto('/');
 
-    await expect(page.getByText('Prometheus unavailable')).toBeVisible();
-    await expect(page.getByLabel('Kafka metrics')).toBeVisible();
+    await expect(page.getByText('Prometheus unavailable').first()).toBeVisible();
+    await expect(page.getByText('Prometheus metrics are unavailable')).toBeVisible();
+    await expect(page.getByLabel('Kafka metrics').getByText('Unavailable').first()).toBeVisible();
+    await expect(page.getByText('No sample').first()).toBeVisible();
   });
 });

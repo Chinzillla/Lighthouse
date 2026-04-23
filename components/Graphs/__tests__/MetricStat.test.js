@@ -30,4 +30,19 @@ describe('MetricStat component', () => {
 
     expect(screen.queryByText('broker count')).not.toBeInTheDocument();
   });
+
+  it('renders an unavailable state without treating missing data as zero', () => {
+    render(
+      <MetricStat
+        isUnavailable
+        label="Broker Signal"
+        value={undefined}
+        helperText="broker count"
+      />
+    );
+
+    expect(screen.getByText('Broker Signal')).toBeInTheDocument();
+    expect(screen.getByText('Unavailable')).toBeInTheDocument();
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
+  });
 });

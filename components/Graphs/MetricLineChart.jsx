@@ -23,7 +23,13 @@ function toNumber(value) {
   return Number.isFinite(numericValue) ? numericValue : 0;
 }
 
-function MetricLineChart({ label, value, borderColor, backgroundColor }) {
+function MetricLineChart({
+  isUnavailable = false,
+  label,
+  value,
+  borderColor,
+  backgroundColor,
+}) {
   const currentValue = useMemo(() => toNumber(value), [value]);
 
   return (
@@ -33,48 +39,52 @@ function MetricLineChart({ label, value, borderColor, backgroundColor }) {
         <span>current sample</span>
       </div>
       <div className={styles.chartViewport}>
-        <Bar
-          data={{
-            labels: ['current'],
-            datasets: [
-              {
-                label,
-                data: [currentValue],
-                backgroundColor,
-                borderColor,
-                borderWidth: 2,
-                borderRadius: 6,
-              },
-            ],
-          }}
-          options={{
-            animation: false,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false,
-              },
-              tooltip: {
-                intersect: false,
-                mode: 'index',
-              },
-            },
-            responsive: true,
-            scales: {
-              x: {
-                grid: {
+        {isUnavailable ? (
+          <div className={styles.chartEmpty}>No sample</div>
+        ) : (
+          <Bar
+            data={{
+              labels: ['current'],
+              datasets: [
+                {
+                  label,
+                  data: [currentValue],
+                  backgroundColor,
+                  borderColor,
+                  borderWidth: 2,
+                  borderRadius: 6,
+                },
+              ],
+            }}
+            options={{
+              animation: false,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
                   display: false,
                 },
-              },
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  precision: 0,
+                tooltip: {
+                  intersect: false,
+                  mode: 'index',
                 },
               },
-            },
-          }}
-        />
+              responsive: true,
+              scales: {
+                x: {
+                  grid: {
+                    display: false,
+                  },
+                },
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    precision: 0,
+                  },
+                },
+              },
+            }}
+          />
+        )}
       </div>
     </section>
   );

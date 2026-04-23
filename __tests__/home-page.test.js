@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import Home from '../pages';
 
 jest.mock('chart.js', () => ({
@@ -48,9 +48,21 @@ function successfulMetricsResponse(metrics) {
   });
 }
 
+function failingMetricsResponse(error = 'Prometheus metrics are unavailable') {
+  return Promise.resolve({
+    json: () => Promise.resolve({ error }),
+    ok: false,
+    status: 502,
+  });
+}
+
 describe('Home dashboard', () => {
   beforeEach(() => {
     fetch.resetMocks();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('fetches dashboard metrics and maps them into stat cards and snapshot charts', async () => {
@@ -102,18 +114,47 @@ describe('Home dashboard', () => {
   });
 
   it('shows the unavailable state without dropping the dashboard layout', async () => {
-    fetch.mockResolvedValue({
-      json: () => Promise.resolve({ error: 'Prometheus unavailable' }),
-      ok: false,
-      status: 502,
-    });
+    fetch.mockImplementation(() =>
+      failingMetricsResponse('Prometheus metrics are unavailable')
+    );
 
     render(<Home />);
 
     await waitFor(() =>
       expect(screen.getByText('Prometheus unavailable')).toBeInTheDocument()
     );
+    expect(screen.getByText('Prometheus metrics are unavailable')).toBeInTheDocument();
+    expect(within(metricCard('Partition Count')).getByText('Unavailable')).toBeInTheDocument();
+    expect(within(metricCard('Broker Signal')).getByText('Unavailable')).toBeInTheDocument();
+    expect(screen.getAllByText('No sample')).toHaveLength(2);
     expect(screen.getByLabelText('Kafka metrics')).toBeInTheDocument();
     expect(screen.getByLabelText('Kafka snapshots')).toBeInTheDocument();
+  });
+
+  it('keeps the last good metric values visible when a later poll fails', async () => {
+    jest.useFakeTimers();
+    fetch
+      .mockImplementationOnce(() =>
+        successfulMetricsResponse({
+          brokerCount: '3',
+          exporterUp: '1',
+          partitionCount: '9',
+          topicCount: '4',
+          totalLogEndOffset: '12500',
+        })
+      )
+      .mockImplementation(() => failingMetricsResponse());
+
+    render(<Home />);
+
+    expect(await screen.findByText('Metrics online')).toBeInTheDocument();
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+    });
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('Prometheus unavailable')).toBeInTheDocument();
+    expect(within(metricCard('Partition Count')).getByText('9')).toBeInTheDocument();
+    expect(within(metricCard('Broker Signal')).getByText('3')).toBeInTheDocument();
+    expect(screen.queryByText('No sample')).not.toBeInTheDocument();
   });
 });

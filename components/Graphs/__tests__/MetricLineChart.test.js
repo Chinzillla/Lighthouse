@@ -71,4 +71,20 @@ describe('MetricLineChart component', () => {
 
     expect(mockBarProps.data.datasets[0].data).toEqual([0]);
   });
+
+  it('renders an empty snapshot state when metrics are unavailable', () => {
+    render(
+      <MetricLineChart
+        isUnavailable
+        label="Topic Inventory"
+        value="12"
+        backgroundColor="rgba(187, 112, 45, 0.16)"
+        borderColor="#a45f22"
+      />
+    );
+
+    expect(screen.getByText('No sample')).toBeInTheDocument();
+    expect(screen.queryByTestId('snapshot-chart')).not.toBeInTheDocument();
+    expect(mockBarProps).toBeUndefined();
+  });
 });
