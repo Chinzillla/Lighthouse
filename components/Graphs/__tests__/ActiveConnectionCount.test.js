@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react';
 import ActiveConnectionCount from '../ActiveConnectionCount';
 
 describe('ActiveConnectionCount component', () => {
-  it('renders the Active Connection Count title', () => {
+  it('renders the broker signal title', () => {
     render(<ActiveConnectionCount results={0} />);
-    expect(screen.getByText('Active Connections')).toBeInTheDocument();
+    expect(screen.getByText('Broker Signal')).toBeInTheDocument();
   });
 
   it('displays the connection count', () => {

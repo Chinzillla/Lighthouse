@@ -3,9 +3,9 @@ import MetricStat from './MetricStat';
 export default function ReceivedRecords({ results = 0 }) {
   return (
     <MetricStat
-      label="Received Records"
+      label="Log End Offset"
       value={results}
-      helperText="records received by brokers"
+      helperText="latest observed Kafka offsets"
     />
   );
 }

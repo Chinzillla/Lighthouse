@@ -3,7 +3,40 @@ services:
     build:
       context: .
     environment:
-      PROMETHEUS_API: ${PROMETHEUS_API:-}
+      PROMETHEUS_API: ${PROMETHEUS_API:-http://prometheus:9090}
     ports:
       - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=2h"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - kafka-metrics
+    restart: unless-stopped
+
+  kafka-metrics:
+    build:
+      context: .
+      dockerfile: Dockerfile.tools
+    environment:
+      KAFKA_BROKERS: ${KAFKA_BROKERS:-host.docker.internal:9092}
+      KAFKA_CLIENT_ID: ${KAFKA_CLIENT_ID:-lighthouse-metrics}
+      KAFKA_SSL: ${KAFKA_SSL:-false}
+      KAFKA_SASL_MECHANISM: ${KAFKA_SASL_MECHANISM:-plain}
+      KAFKA_SASL_USERNAME: ${KAFKA_SASL_USERNAME:-}
+      KAFKA_SASL_PASSWORD: ${KAFKA_SASL_PASSWORD:-}
+      METRICS_PORT: 9308
+    ports:
+      - "9308:9308"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped

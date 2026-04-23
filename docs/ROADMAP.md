@@ -7,6 +7,8 @@ features.
 
 - Replace brittle dashboard code paths
 - Keep Prometheus access server-side
+- Add a local Docker Kafka stack for demos and development
+- Support external Kafka and Confluent Cloud connection settings
 - Add reproducible CI checks
 - Harden Docker support
 - Refresh documentation

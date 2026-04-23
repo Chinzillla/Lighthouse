@@ -10,10 +10,10 @@ jest.mock('react-chartjs-2', () => {
 });
 
 describe('ReceivedBytes component', () => {
-  it('renders the Received Bytes chart label', () => {
+  it('renders the Kafka Activity chart label', () => {
     render(<ReceivedBytes value={100} />);
 
-    expect(screen.getByText('Received Bytes')).toBeInTheDocument();
+    expect(screen.getByText('Kafka Activity')).toBeInTheDocument();
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 });

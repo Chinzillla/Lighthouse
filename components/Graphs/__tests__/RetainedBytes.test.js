@@ -10,10 +10,10 @@ jest.mock('react-chartjs-2', () => {
 });
 
 describe('RetainedBytes component', () => {
-  it('renders the Retained Bytes chart label', () => {
+  it('renders the Topic Inventory chart label', () => {
     render(<RetainedBytes value={100} />);
 
-    expect(screen.getByText('Retained Bytes')).toBeInTheDocument();
+    expect(screen.getByText('Topic Inventory')).toBeInTheDocument();
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 });

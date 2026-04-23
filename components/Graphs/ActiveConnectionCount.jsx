@@ -3,9 +3,9 @@ import MetricStat from './MetricStat';
 export default function ActiveConnectionCount({ results = 0 }) {
   return (
     <MetricStat
-      label="Active Connections"
+      label="Broker Signal"
       value={results}
-      helperText="current open broker connections"
+      helperText="broker count locally, connection signal externally"
     />
   );
 }

@@ -2,9 +2,9 @@ import { render, screen } from '@testing-library/react';
 import ReceivedRecords from '../ReceivedRecords';
 
 describe('ReceivedRecords component', () => {
-  it('renders the Received Records title', () => {
+  it('renders the log end offset title', () => {
     render(<ReceivedRecords results={0} />);
-    expect(screen.getByText('Received Records')).toBeInTheDocument();
+    expect(screen.getByText('Log End Offset')).toBeInTheDocument();
   });
 
   it('displays the received records count', () => {

@@ -8,6 +8,23 @@ const EMPTY_PROMETHEUS_RESPONSE = {
   },
 };
 
+const METRIC_EXPRESSIONS = {
+  activeConnectionCount:
+    'lighthouse_kafka_broker_count or confluent_kafka_server_active_connection_count',
+  authCount:
+    'lighthouse_kafka_exporter_up or confluent_kafka_server_successful_authentication_count',
+  partitionCount:
+    'lighthouse_kafka_partition_count or confluent_kafka_server_partition_count',
+  receivedBytes:
+    'lighthouse_kafka_total_log_end_offset or confluent_kafka_server_received_bytes',
+  receivedRecords:
+    'lighthouse_kafka_total_log_end_offset or confluent_kafka_server_received_records',
+  retainedBytes:
+    'lighthouse_kafka_topic_count or confluent_kafka_server_retained_bytes',
+  sentBytes: 'confluent_kafka_server_sent_bytes',
+  sentRecords: 'confluent_kafka_server_sent_records',
+};
+
 export class PrometheusAPI extends RESTDataSource {
   constructor() {
     super();
@@ -25,34 +42,34 @@ export class PrometheusAPI extends RESTDataSource {
   }
   
   async getPartitionCount() {
-    return this.queryMetric('confluent_kafka_server_partition_count', 180);
+    return this.queryMetric(METRIC_EXPRESSIONS.partitionCount, 180);
   }
   
   async getReceivedBytes(){
-    return this.queryMetric('confluent_kafka_server_received_bytes', 500);
+    return this.queryMetric(METRIC_EXPRESSIONS.receivedBytes, 500);
   }
 
   async getRetainedBytes(){
-    return this.queryMetric('confluent_kafka_server_retained_bytes', 500);
+    return this.queryMetric(METRIC_EXPRESSIONS.retainedBytes, 500);
   }
 
   async getSentBytes(){
-    return this.queryMetric('confluent_kafka_server_sent_bytes', 540);
+    return this.queryMetric(METRIC_EXPRESSIONS.sentBytes, 540);
   }
 
   async getSentRecords(){
-    return this.queryMetric('confluent_kafka_server_sent_records', 540);
+    return this.queryMetric(METRIC_EXPRESSIONS.sentRecords, 540);
   }
 
   async getReceivedRecords(){
-    return this.queryMetric('confluent_kafka_server_received_records', 180);
+    return this.queryMetric(METRIC_EXPRESSIONS.receivedRecords, 180);
   }
 
   async getAuthCount(){
-    return this.queryMetric('confluent_kafka_server_successful_authentication_count', 180);
+    return this.queryMetric(METRIC_EXPRESSIONS.authCount, 180);
   }
 
   async getActiveConnectionCount(){
-    return this.queryMetric('confluent_kafka_server_active_connection_count', 180);
+    return this.queryMetric(METRIC_EXPRESSIONS.activeConnectionCount, 180);
   }
 }
