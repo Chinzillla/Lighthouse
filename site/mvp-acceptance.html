@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighthouse Docs | MVP Acceptance</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1 class="brand">Lighthouse</h1>
+        <p class="tagline">Docs for the Kafka replay engine rebuild.</p>
+        <nav class="nav">
+          <a href="./index.html">Overview</a>
+          <a href="./getting-started.html">Getting Started</a>
+          <a href="./replay-cli.html">Replay CLI</a>
+          <a href="./replay-jobs.html">Replay Jobs</a>
+          <a href="./replay-api.html">Replay API</a>
+          <a href="./replay-ui.html">Replay UI</a>
+          <a href="./architecture.html">Architecture</a>
+          <a href="./operations.html">Operations</a>
+          <a class="active" href="./mvp-acceptance.html">MVP Acceptance</a>
+          <a href="./roadmap.html">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <p class="eyebrow">MVP Acceptance</p>
+        <h1>Phase 6.5 proves the replay MVP before alpha quality control.</h1>
+        <p class="lede">
+          The acceptance pass verifies that Lighthouse can replay bounded Kafka
+          history safely through the CLI, API, UI, and local Docker sample path.
+        </p>
+
+        <h2>Current Status</h2>
+        <p>Accepted locally on 2026-04-28 with the sample Kafka stack.</p>
+        <pre><code>npm run verify
+npm run e2e
+$env:KAFKA_INTEGRATION="1"
+$env:KAFKA_BROKERS="localhost:19092,localhost:19093,localhost:19094"
+npm.cmd run test:kafka:integration
+npm run docker:config</code></pre>
+
+        <h2>Acceptance Checklist</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Evidence</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Offset replay</td>
+              <td>Live Kafka integration copies a bounded offset range into a destination topic and verifies replay headers.</td>
+            </tr>
+            <tr>
+              <td>Timestamp replay</td>
+              <td>Integration coverage writes timestamped records, resolves a time window, and replays only matching records.</td>
+            </tr>
+            <tr>
+              <td>Dry-run safety</td>
+              <td>Dry-run preview validates the replay plan without producing destination records.</td>
+            </tr>
+            <tr>
+              <td>Loop prevention</td>
+              <td>Validation rejects source and destination topic collisions before replay starts.</td>
+            </tr>
+            <tr>
+              <td>Kafka run modes</td>
+              <td>Docs cover local Docker Kafka, an external Kafka endpoint, and Confluent Cloud settings.</td>
+            </tr>
+            <tr>
+              <td>Docs parity</td>
+              <td>README and GitHub Pages describe the same replay modes, safety model, API routes, UI workflow, and limits.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Acceptance Notes</h2>
+        <ul>
+          <li>Dry-run preview uses the same replay validation as actual replay, but never creates a producer.</li>
+          <li>Timestamp replay uses inclusive start and exclusive end semantics, then stores resolved offsets on the job.</li>
+          <li>Cancellation is cooperative for API-started and CLI-started jobs.</li>
+          <li>Multi-cluster replay, RBAC, Schema Registry integration, Kubernetes deployment, and exactly-once replay guarantees remain outside the MVP.</li>
+        </ul>
+
+        <div class="callout">
+          The live Kafka integration suite can emit a non-blocking
+          <code>TimeoutNegativeWarning</code> from the Kafka client path while
+          still passing. Treat it as alpha cleanup if it remains reproducible.
+        </div>
+
+        <p class="footer">
+          The repo checklist lives in <code>docs/MVP_ACCEPTANCE.md</code>.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>
