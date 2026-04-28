@@ -52,6 +52,7 @@
             <tr><td><code>--end</code></td><td>Inclusive ending offset</td></tr>
             <tr><td><code>--start-timestamp</code></td><td>Inclusive ISO timestamp or epoch milliseconds</td></tr>
             <tr><td><code>--end-timestamp</code></td><td>Exclusive ISO timestamp or epoch milliseconds</td></tr>
+            <tr><td><code>--messages-per-second</code></td><td>Optional write cap for actual replay execution</td></tr>
             <tr><td><code>--dry-run</code></td><td>Preview the replay without producing</td></tr>
             <tr><td><code>--job-id</code></td><td>Stable replay identifier for logs and headers</td></tr>
             <tr><td><code>--brokers</code></td><td>Override the broker list instead of using <code>KAFKA_BROKERS</code></td></tr>
@@ -62,6 +63,7 @@
         <h2>Replay Examples</h2>
         <pre><code>npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --job-id incident-2026-04-28</code></pre>
         <pre><code>npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --dry-run --job-id incident-2026-04-28</code></pre>
+        <pre><code>npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --messages-per-second 10 --job-id incident-throttled-2026-04-28</code></pre>
         <pre><code>npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z --job-id incident-window-2026-04-28</code></pre>
 
         <h2>Dry-Run Preview</h2>
@@ -77,6 +79,13 @@
           before consuming records. The start timestamp is inclusive and the end
           timestamp is exclusive. If the window resolves to no retained
           messages, the command fails before replay begins.
+        </p>
+
+        <h2>Replay Throttling</h2>
+        <p>
+          <code>--messages-per-second</code> caps writes to the destination
+          topic during actual replay execution. Preview stays fast because it
+          does not produce records.
         </p>
 
         <h2>Replay Headers</h2>
@@ -104,6 +113,7 @@
           <li>The start offset must not be older than the retained low watermark.</li>
           <li>The end offset must be lower than the source topic's next unread offset.</li>
           <li>Timestamp windows must resolve to a non-empty retained offset range.</li>
+          <li>Messages per second, when set, must be a positive integer.</li>
         </ul>
 
         <div class="callout">

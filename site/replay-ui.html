@@ -37,6 +37,7 @@
         <ul>
           <li>save a draft replay job</li>
           <li>create drafts by offset range or timestamp window</li>
+          <li>set an optional max messages-per-second cap</li>
           <li>select a persisted job from the recent jobs table</li>
           <li>preview message payloads and replay headers</li>
           <li>start a replay from the selected draft</li>
@@ -56,6 +57,11 @@
           <li>start the replay</li>
           <li>watch the recent jobs table update</li>
         </ol>
+
+        <p>
+          Leave <code>Max messages/sec</code> blank for unthrottled replay, or
+          set a positive integer when sandbox consumers need a slower replay.
+        </p>
 
         <h2>Current Limits</h2>
         <ul>

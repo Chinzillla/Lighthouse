@@ -8,6 +8,7 @@ The replay workspace supports:
 
 - entering source topic, destination topic, partition, and offset range
 - switching between offset replay and timestamp-window replay
+- setting an optional max messages-per-second cap for replay execution
 - saving a draft replay job through the existing API
 - selecting a persisted job from the recent jobs table
 - previewing structured records before replay
@@ -63,12 +64,17 @@ timestamps such as:
 The UI sends those timestamps to the API, which resolves them to offsets before
 the draft is saved.
 
+For throttled replay, enter a value in `Max messages/sec`. Leave it blank for
+unthrottled replay. The cap is stored on the job and applied when the replay is
+started.
+
 ## Interaction Model
 
 The replay UI is split into three panels:
 
 - `Create draft`: persists a replay request through `POST /api/jobs`
-- `Selected job`: runs preview, start, and cancel actions for the active job
+- `Selected job`: shows resolved offsets, throttle setting, and runs preview,
+  start, or cancel actions for the active job
 - `Recent jobs`: shows the latest persisted jobs and their current state
 
 Preview results are shown in a separate output panel with:

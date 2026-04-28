@@ -30,7 +30,8 @@
         <p class="lede">
           Phase 4 adds a backend contract for replay creation, preview, start,
           cancellation, and status reads. The API uses the same SQLite job store
-          and replay engine as the CLI, including timestamp-window job creation.
+          and replay engine as the CLI, including timestamp-window job creation
+          and replay throttling.
         </p>
 
         <h2>Endpoints</h2>
@@ -46,7 +47,7 @@
         <h2>Create and Preview</h2>
         <pre><code>curl -X POST http://localhost:3000/api/jobs \
   -H "content-type: application/json" \
-  -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"10","end":"25","job-id":"incident-2026-04-28"}'
+  -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"10","end":"25","messages-per-second":"10","job-id":"incident-2026-04-28"}'
 curl http://localhost:3000/api/jobs/incident-2026-04-28/preview</code></pre>
 
         <h2>Create From Time Window</h2>
@@ -57,6 +58,13 @@ curl http://localhost:3000/api/jobs/incident-2026-04-28/preview</code></pre>
           Timestamp job creation resolves the window to concrete offsets before
           the draft is stored. The start timestamp is inclusive and the end
           timestamp is exclusive.
+        </p>
+
+        <h2>Replay Throttling</h2>
+        <p>
+          Add <code>messages-per-second</code> to the create payload to store a
+          write cap on the job. The cap is enforced when the replay starts and
+          writes to the destination topic.
         </p>
 
         <h2>Start and Poll</h2>

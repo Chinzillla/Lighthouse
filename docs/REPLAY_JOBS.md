@@ -13,6 +13,7 @@ Lighthouse now supports:
 - CLI commands to create, start, list, show, and cancel jobs
 - API endpoints to create, inspect, preview, start, and cancel persisted jobs
 - timestamp-window jobs that resolve to concrete offsets at creation time
+- optional message-per-second throttling stored with each job
 
 The replay worker still executes a deterministic offset range. Timestamp jobs
 resolve their time window before persistence, then store the resolved offsets.
@@ -45,6 +46,12 @@ Create a draft from a timestamp window:
 
 ```bash
 npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z --job-id incident-window-2026-04-28
+```
+
+Create a throttled draft:
+
+```bash
+npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 10 --end 25 --messages-per-second 10 --job-id incident-throttled-2026-04-28
 ```
 
 Start the job:
@@ -88,6 +95,7 @@ Each replay job stores:
 - original end timestamp for timestamp jobs
 - status
 - dry-run flag
+- optional messages-per-second cap
 - replayed count
 - total message count for the requested range
 - created time

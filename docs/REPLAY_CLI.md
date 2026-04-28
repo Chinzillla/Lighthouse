@@ -15,11 +15,11 @@ Implemented today:
 - dry-run preview mode
 - replay metadata headers for traceability
 - timestamp-to-offset resolution before replay
+- optional message-per-second throttling for actual replay writes
 
 Not implemented yet:
 
 - key-based filtering
-- throttling
 - running-job cancellation
 
 ## Command Shape
@@ -52,6 +52,7 @@ Optional flags:
 --brokers <host:port,...>
 --client-id <id>
 --job-id <id>
+--messages-per-second <count>
 --dry-run
 --progress-every <count>
 ```
@@ -68,6 +69,12 @@ Preview the same slice without producing anything:
 
 ```bash
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --dry-run --job-id incident-2026-04-28
+```
+
+Replay the slice with a write cap of 10 messages per second:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --messages-per-second 10 --job-id incident-throttled-2026-04-28
 ```
 
 Replay a failure window by timestamp. The start timestamp is inclusive and the
@@ -119,6 +126,16 @@ Semantics:
 The replay summary and persisted jobs store the resolved offsets. That keeps
 execution deterministic after the job is created.
 
+## Throttling Behavior
+
+`--messages-per-second` caps actual replay writes to the destination topic. The
+first message can be written immediately; later writes are paced so the replay
+does not exceed the configured rate.
+
+Throttling applies to replay execution, not preview-only reads. This keeps
+preview responsive while still protecting downstream sandbox consumers during
+an actual replay.
+
 ## Replay Headers
 
 Actual replay writes preserve the source message key, value, timestamp, and any
@@ -146,6 +163,7 @@ The CLI currently enforces the following rules before replay begins:
 - start offset must be greater than or equal to the retained earliest offset
 - end offset must be lower than the source topic's next unread offset
 - timestamp windows must resolve to a non-empty offset range
+- messages-per-second, when set, must be a positive integer
 
 ## Verification
 

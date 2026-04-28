@@ -14,6 +14,7 @@ Lighthouse now supports:
 - `POST /api/jobs/:jobId/start` to start the job in-process and return `running`
 - `POST /api/jobs/:jobId/cancel` to cancel draft or failed jobs
 - timestamp-window job creation with resolved offsets
+- optional `messages-per-second` throttling for replay execution
 
 The API is built on the same replay engine and SQLite job store used by the CLI.
 Validation, safety rules, and job status transitions are shared.
@@ -49,7 +50,7 @@ http://localhost:3000/api/jobs
 ```bash
 curl -X POST http://localhost:3000/api/jobs \
   -H "content-type: application/json" \
-  -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"10","end":"25","job-id":"incident-2026-04-28"}'
+  -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"10","end":"25","messages-per-second":"10","job-id":"incident-2026-04-28"}'
 ```
 
 Response:
@@ -63,7 +64,8 @@ Response:
     "destinationTopic": "orders-replay",
     "partition": 0,
     "startOffset": 10,
-    "endOffset": 25
+    "endOffset": 25,
+    "messagesPerSecond": 10
   }
 }
 ```
@@ -79,6 +81,24 @@ curl -X POST http://localhost:3000/api/jobs \
 Timestamp windows use inclusive start and exclusive end semantics. Job creation
 resolves the time window to concrete source offsets before the draft is saved.
 If the window has no retained messages, the API returns a validation error.
+
+## Throttling
+
+Add `messages-per-second` to the create payload to cap actual replay writes:
+
+```json
+{
+  "source": "orders",
+  "destination": "orders-replay",
+  "partition": "0",
+  "start": "10",
+  "end": "25",
+  "messages-per-second": "10"
+}
+```
+
+The API stores the cap on the job. Preview endpoints remain dry-run reads; the
+cap is enforced when a job is started and writes to the destination topic.
 
 ## List and Read Jobs
 
