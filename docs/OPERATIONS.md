@@ -1,8 +1,8 @@
 # Operations Notes
 
 This document covers the stable run paths for the current Lighthouse foundation:
-the dashboard, Prometheus, Docker sample Kafka, replay CLI, replay jobs, and
-CI checks.
+the dashboard, Prometheus, Docker sample Kafka, replay CLI, replay jobs, replay
+API, and CI checks.
 
 ## Local Demo Stack
 
@@ -43,6 +43,16 @@ Create a persisted draft job and start it:
 ```bash
 npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 0 --end 5 --job-id sample-job
 npm run replay:jobs -- start --job-id sample-job
+```
+
+Create the same job through HTTP and preview it before start:
+
+```bash
+curl -X POST http://localhost:3000/api/jobs \
+  -H "content-type: application/json" \
+  -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"0","end":"5","job-id":"sample-job-api"}'
+curl http://localhost:3000/api/jobs/sample-job-api/preview
+curl -X POST http://localhost:3000/api/jobs/sample-job-api/start
 ```
 
 For an existing Kafka or Confluent Cloud cluster, set the Kafka variables in
@@ -90,6 +100,13 @@ Dashboard metrics API:
 
 ```bash
 curl http://localhost:3000/api/dashboard-metrics
+```
+
+Replay jobs API:
+
+```bash
+curl http://localhost:3000/api/jobs
+curl http://localhost:3000/api/jobs/sample-job-api
 ```
 
 Prometheus readiness:
@@ -163,6 +180,12 @@ If `npm run replay:jobs -- start --job-id <id>` fails immediately, check:
 - the current shell has the right `KAFKA_*` settings
 - the sample stack or external Kafka cluster is reachable
 - the local SQLite file is writable
+
+If `POST /api/jobs/:jobId/start` fails, check the same conditions plus:
+
+- the Next.js app process has the same `KAFKA_*` settings as the CLI
+- the job is not already `running`, `completed`, or `cancelled`
+- the job id in the route matches a persisted record
 
 ## CI Parity
 

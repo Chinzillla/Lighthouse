@@ -6,6 +6,9 @@
     "node": ">=24 <25",
     "npm": ">=10"
   },
+  "overrides": {
+    "postcss": "8.5.12"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

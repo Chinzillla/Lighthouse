@@ -16,6 +16,7 @@
           <a href="./getting-started.html">Getting Started</a>
           <a href="./replay-cli.html">Replay CLI</a>
           <a href="./replay-jobs.html">Replay Jobs</a>
+          <a href="./replay-api.html">Replay API</a>
           <a href="./architecture.html">Architecture</a>
           <a class="active" href="./operations.html">Operations</a>
           <a href="./roadmap.html">Roadmap</a>
@@ -51,6 +52,14 @@ npm.cmd run test:kafka:integration</code></pre>
         <h2>Replay Jobs</h2>
         <pre><code>npm run replay:jobs -- list
 npm run replay:jobs -- show --job-id sample-job</code></pre>
+
+        <h2>Replay API Smoke Test</h2>
+        <pre><code>curl -X POST http://localhost:3000/api/jobs \
+  -H "content-type: application/json" \
+  -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"0","end":"5","job-id":"sample-job-api"}'
+curl http://localhost:3000/api/jobs/sample-job-api/preview
+curl -X POST http://localhost:3000/api/jobs/sample-job-api/start
+curl http://localhost:3000/api/jobs/sample-job-api</code></pre>
 
         <h2>Troubleshooting</h2>
         <h3>Prometheus unavailable</h3>
