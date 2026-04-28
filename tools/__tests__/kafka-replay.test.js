@@ -59,11 +59,41 @@ describe('Kafka replay CLI', () => {
       destinationTopic: 'orders-replay',
       dryRun: false,
       endOffset: 25,
+      endTimestamp: null,
+      endTimestampMs: null,
       partition: 2,
       progressInterval: 25,
+      replayMode: 'offset',
       replayJobId: expect.stringMatching(/^replay-\d+-[a-f0-9]{8}$/),
       sourceTopic: 'orders',
       startOffset: 10,
+      startTimestamp: null,
+      startTimestampMs: null,
+    });
+  });
+
+  it('normalizes timestamp replay windows as ISO timestamps', () => {
+    expect(
+      normalizeReplayOptions(
+        {
+          destination: 'orders-replay',
+          'end-timestamp': '2026-04-28T14:08:00.000Z',
+          partition: '0',
+          source: 'orders',
+          'start-timestamp': '2026-04-28T14:03:00.000Z',
+        },
+        {
+          KAFKA_BROKERS: 'localhost:19092',
+        }
+      )
+    ).toMatchObject({
+      endOffset: null,
+      endTimestamp: '2026-04-28T14:08:00.000Z',
+      endTimestampMs: Date.parse('2026-04-28T14:08:00.000Z'),
+      replayMode: 'timestamp',
+      startOffset: null,
+      startTimestamp: '2026-04-28T14:03:00.000Z',
+      startTimestampMs: Date.parse('2026-04-28T14:03:00.000Z'),
     });
   });
 
@@ -105,6 +135,7 @@ describe('Kafka replay CLI', () => {
         endOffset: 5,
         partition: 0,
         progressInterval: 25,
+        replayMode: 'offset',
         replayJobId: 'job-1',
         sourceTopic: 'orders',
         startOffset: 7,
@@ -120,6 +151,7 @@ describe('Kafka replay CLI', () => {
         endOffset: 7,
         partition: 0,
         progressInterval: 25,
+        replayMode: 'offset',
         replayJobId: 'job-1',
         sourceTopic: 'orders',
         startOffset: 5,
@@ -147,6 +179,7 @@ describe('Kafka replay CLI', () => {
         destinationTopic: 'orders-replay',
         endOffset: 10,
         partition: 0,
+        replayMode: 'offset',
         sourceTopic: 'orders',
         startOffset: 4,
       })
@@ -159,12 +192,53 @@ describe('Kafka replay CLI', () => {
         destinationTopic: 'orders-replay',
         endOffset: 15,
         partition: 0,
+        replayMode: 'offset',
         sourceTopic: 'orders',
         startOffset: 5,
       })
     ).rejects.toThrow(
       'End offset 15 must be lower than the next unread offset 15 for orders[0]'
     );
+  });
+
+  it('resolves timestamp replay windows to concrete offsets', async () => {
+    const admin = {
+      fetchTopicOffsets: jest.fn((topic) => {
+        if (topic === 'orders') {
+          return Promise.resolve([{ partition: 0, low: '5', high: '15', offset: '15' }]);
+        }
+
+        return Promise.resolve([{ partition: 0, low: '0', high: '0', offset: '0' }]);
+      }),
+      fetchTopicOffsetsByTimestamp: jest.fn((_topic, timestamp) => {
+        if (timestamp === Date.parse('2026-04-28T14:03:00.000Z')) {
+          return Promise.resolve([{ partition: 0, offset: '7' }]);
+        }
+
+        return Promise.resolve([{ partition: 0, offset: '11' }]);
+      }),
+      listTopics: jest.fn().mockResolvedValue(['orders', 'orders-replay']),
+    };
+
+    await expect(
+      resolveReplayPlan(admin, {
+        destinationTopic: 'orders-replay',
+        endTimestamp: '2026-04-28T14:08:00.000Z',
+        endTimestampMs: Date.parse('2026-04-28T14:08:00.000Z'),
+        partition: 0,
+        replayMode: 'timestamp',
+        sourceTopic: 'orders',
+        startTimestamp: '2026-04-28T14:03:00.000Z',
+        startTimestampMs: Date.parse('2026-04-28T14:03:00.000Z'),
+      })
+    ).resolves.toMatchObject({
+      endExclusiveOffset: 11,
+      endOffset: 10,
+      replayMode: 'timestamp',
+      startOffset: 7,
+      totalMessages: 4,
+    });
+    expect(admin.fetchTopicOffsetsByTimestamp).toHaveBeenCalledTimes(2);
   });
 
   it('replays only the requested partition range and preserves message payloads', async () => {

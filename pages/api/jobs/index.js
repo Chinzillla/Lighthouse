@@ -40,6 +40,7 @@ function createHandler(dependencies = {}) {
             createReplayJob(request.body || {}, {
               env,
               now,
+              replayPlanResolver: dependencies.replayPlanResolver,
               store,
             }),
           dependencies

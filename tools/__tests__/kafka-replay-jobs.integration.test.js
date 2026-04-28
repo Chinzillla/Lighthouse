@@ -76,7 +76,7 @@ describeIfKafka('Replay jobs integration', () => {
         ],
       });
 
-      const job = createReplayJob(
+      const job = await createReplayJob(
         {
           destination: destinationTopic,
           end: String(sourceNextOffsetBefore + 2),
