@@ -15,6 +15,7 @@
           <a href="./index.html">Overview</a>
           <a href="./getting-started.html">Getting Started</a>
           <a href="./replay-cli.html">Replay CLI</a>
+          <a href="./replay-jobs.html">Replay Jobs</a>
           <a href="./architecture.html">Architecture</a>
           <a class="active" href="./operations.html">Operations</a>
           <a href="./roadmap.html">Roadmap</a>
@@ -47,6 +48,10 @@ curl http://localhost:9308/metrics</code></pre>
 $env:KAFKA_BROKERS="localhost:19092,localhost:19093,localhost:19094"
 npm.cmd run test:kafka:integration</code></pre>
 
+        <h2>Replay Jobs</h2>
+        <pre><code>npm run replay:jobs -- list
+npm run replay:jobs -- show --job-id sample-job</code></pre>
+
         <h2>Troubleshooting</h2>
         <h3>Prometheus unavailable</h3>
         <p>Check that Prometheus is up and reachable from the app process.</p>
@@ -63,6 +68,12 @@ curl http://localhost:9308/metrics</code></pre>
           This usually means the requested offsets are outside the retained
           source range, or the destination topic is missing the selected
           partition.
+        </p>
+
+        <h3>Replay job start fails</h3>
+        <p>
+          Check the job status, Kafka connectivity, and whether the local SQLite
+          file path is writable.
         </p>
 
         <h2>CI</h2>

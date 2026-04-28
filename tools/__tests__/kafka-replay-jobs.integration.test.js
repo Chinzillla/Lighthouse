@@ -13,7 +13,7 @@ const {
   getNextOffset,
   readMatchingMessages,
   uniqueId,
-} = require('./kafka-test-helpers');
+} = require('../test-helpers/kafka');
 
 jest.setTimeout(45000);
 

@@ -8,10 +8,11 @@ Completed:
 - Phase 0.5 dependency modernization
 - Phase 1 replay CLI prototype
 - Phase 2 safety and traceability for dry-run preview and replay headers
+- Phase 3 replay jobs and local persistence
 
 Next focus:
 
-- Phase 3 replay jobs and local persistence
+- Phase 4 API layer
 
 ## Phase 0: Foundation
 

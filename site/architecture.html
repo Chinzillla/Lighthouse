@@ -15,6 +15,7 @@
           <a href="./index.html">Overview</a>
           <a href="./getting-started.html">Getting Started</a>
           <a href="./replay-cli.html">Replay CLI</a>
+          <a href="./replay-jobs.html">Replay Jobs</a>
           <a class="active" href="./architecture.html">Architecture</a>
           <a href="./operations.html">Operations</a>
           <a href="./roadmap.html">Roadmap</a>
@@ -51,6 +52,15 @@
   -> Per-message preview or replay
   -> Destination topic write
   -> Summary and progress logs</code></pre>
+
+        <h2>Replay Job Flow</h2>
+        <pre><code>Job create command
+  -> SQLite draft record
+  -> Job start command
+  -> Status moves to running
+  -> Replay engine executes
+  -> Progress updates written to SQLite
+  -> Status moves to completed or failed</code></pre>
 
         <h2>Local Sample Stack</h2>
         <ul>
