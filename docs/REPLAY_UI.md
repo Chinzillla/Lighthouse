@@ -15,6 +15,8 @@ The replay workspace supports:
 - starting replay from the selected draft
 - cancelling draft or failed jobs
 - polling recent job state every few seconds
+- progress bars with percent complete, current offset, observed throughput,
+  elapsed time, and ETA when available
 
 The UI is intentionally narrow. It focuses on the replay path and avoids
 becoming a generic dashboard-builder surface.
@@ -53,7 +55,8 @@ The existing top navigation now links directly to the replay section.
 
 4. preview the selected draft to inspect the payloads and replay headers
 5. start the replay job
-6. watch status and progress update in the recent jobs table
+6. watch status, percent complete, throughput, and ETA update in the selected
+   job panel and recent jobs table
 
 For timestamp replay, switch the create form to `Time window` and enter ISO
 timestamps such as:
@@ -74,8 +77,8 @@ The replay UI is split into three panels:
 
 - `Create draft`: persists a replay request through `POST /api/jobs`
 - `Selected job`: shows resolved offsets, throttle setting, and runs preview,
-  start, or cancel actions for the active job
-- `Recent jobs`: shows the latest persisted jobs and their current state
+  progress metrics, start, or cancel actions for the active job
+- `Recent jobs`: shows the latest persisted jobs, status, and progress bar
 
 Preview results are shown in a separate output panel with:
 

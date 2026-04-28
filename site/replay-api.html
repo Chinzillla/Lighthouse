@@ -31,7 +31,7 @@
           Phase 4 adds a backend contract for replay creation, preview, start,
           cancellation, and status reads. The API uses the same SQLite job store
           and replay engine as the CLI, including timestamp-window job creation
-          and replay throttling.
+          replay throttling, and derived progress metrics.
         </p>
 
         <h2>Endpoints</h2>
@@ -74,6 +74,14 @@ curl http://localhost:3000/api/jobs/incident-2026-04-28</code></pre>
           Start requests return the job in <code>running</code> state and launch
           the replay worker in the app process. Progress is written back to
           SQLite and can be polled by job id.
+        </p>
+
+        <h2>Progress Object</h2>
+        <p>
+          Job reads include a derived <code>progress</code> object with replayed
+          count, total count, remaining count, percent complete, current offset,
+          elapsed time, average messages per second, and estimated remaining
+          time for running jobs.
         </p>
 
         <h2>Status Codes</h2>

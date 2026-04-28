@@ -21,7 +21,7 @@ Implemented today:
 - Offset-range and timestamp-window Kafka replay for one topic partition
 - Optional message-per-second throttling for replay writes
 - Dry-run replay preview and replay metadata headers for traceability
-- Replay job workflow with SQLite persistence and job status tracking
+- Replay job workflow with SQLite persistence, status tracking, and progress metrics
 - Replay job REST API for creation, listing, preview, start, cancel, and status reads
 - Minimal replay workspace in the Next.js UI for draft creation, preview, start, and monitoring
 - Static GitHub Pages documentation site source in `site/`
@@ -31,7 +31,7 @@ Implemented today:
 
 Planned next:
 
-- Operational controls such as richer progress metrics and running-job cancellation
+- Operational controls such as running-job cancellation
 
 ## Architecture
 
@@ -318,6 +318,8 @@ curl http://localhost:3000/api/jobs
 The start endpoint launches the replay worker in the application process and
 returns the job in `running` state immediately. Progress and final status are
 persisted in SQLite, so the job can be polled through `GET /api/jobs/:jobId`.
+Every job response includes derived progress metrics for percent complete,
+remaining messages, current offset, elapsed time, throughput, and ETA.
 
 ## Replay UI
 
@@ -333,7 +335,7 @@ The replay workspace supports:
 - selecting a recent job from the monitor table
 - previewing structured messages and replay headers
 - starting or cancelling draft jobs
-- polling recent job state from the API
+- polling recent job state and progress metrics from the API
 
 Recommended demo flow:
 
@@ -342,7 +344,7 @@ Recommended demo flow:
 3. use the `Replay` navigation link
 4. save a draft for `orders -> orders-replay`
 5. preview the message slice
-6. start the replay and watch the job status change
+6. start the replay and watch the job status, progress, throughput, and ETA change
 
 ## Local Development
 

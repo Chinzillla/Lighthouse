@@ -63,6 +63,80 @@ function formatThrottle(job) {
   return job.messagesPerSecond ? `${job.messagesPerSecond}/s` : 'Unthrottled';
 }
 
+function normalizeMetric(value, fallback = 0) {
+  if (value === null || value === undefined) return fallback;
+  const metric = Number(value);
+
+  return Number.isFinite(metric) ? metric : fallback;
+}
+
+function getJobProgress(job) {
+  const totalCount = normalizeMetric(job.progress?.totalCount ?? job.progressTotal);
+  const replayedCount = normalizeMetric(job.progress?.replayedCount ?? job.replayedCount);
+  const countedReplay = Math.min(replayedCount, totalCount);
+  const fallbackPercent =
+    totalCount > 0 ? Math.min((replayedCount / totalCount) * 100, 100) : 0;
+
+  return {
+    averageMessagesPerSecond: job.progress?.averageMessagesPerSecond ?? null,
+    currentOffset: job.progress?.currentOffset ?? job.lastReplayedOffset ?? null,
+    elapsedMs: job.progress?.elapsedMs ?? null,
+    estimatedRemainingMs: job.progress?.estimatedRemainingMs ?? null,
+    percent: normalizeMetric(job.progress?.percent, fallbackPercent),
+    remainingCount:
+      job.progress?.remainingCount ?? Math.max(totalCount - countedReplay, 0),
+    replayedCount,
+    totalCount,
+  };
+}
+
+function formatPercent(value) {
+  const percent = Math.max(0, Math.min(normalizeMetric(value), 100));
+
+  return `${Number.isInteger(percent) ? percent : percent.toFixed(1)}%`;
+}
+
+function formatDuration(ms, emptyLabel = 'Pending') {
+  if (ms === null || ms === undefined) {
+    return emptyLabel;
+  }
+
+  const seconds = Math.max(0, Math.round(ms / 1000));
+
+  if (seconds === 0) {
+    return '<1s';
+  }
+
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+}
+
+function formatRate(value) {
+  if (value === null || value === undefined) {
+    return 'Pending';
+  }
+
+  const rate = normalizeMetric(value);
+  const formattedRate =
+    rate >= 10 ? String(Math.round(rate)) : rate >= 1 ? rate.toFixed(1) : rate.toFixed(2);
+
+  return `${formattedRate.replace(/\.0$/, '')}/s`;
+}
+
+function formatEta(progress) {
+  if (progress.remainingCount === 0) {
+    return 'Complete';
+  }
+
+  return formatDuration(progress.estimatedRemainingMs);
+}
+
 function formatUpdatedAt(value) {
   if (!value) {
     return 'Waiting';
@@ -80,6 +154,32 @@ function upsertJob(currentJobs, nextJob) {
   return [nextJob, ...remainingJobs]
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
     .slice(0, RECENT_JOB_LIMIT);
+}
+
+function ProgressMeter({ compact = false, job }) {
+  const progress = getJobProgress(job);
+  const percent = Math.max(0, Math.min(progress.percent, 100));
+
+  return (
+    <div className={compact ? styles.progressMeterCompact : styles.progressMeter}>
+      <div className={styles.progressText}>
+        <span>
+          {progress.replayedCount}/{progress.totalCount}
+        </span>
+        <small>{formatPercent(percent)}</small>
+      </div>
+      <div
+        className={styles.progressTrack}
+        role="progressbar"
+        aria-label={`Replay progress ${formatPercent(percent)}`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(percent)}
+      >
+        <span className={styles.progressFill} style={{ width: `${percent}%` }} />
+      </div>
+    </div>
+  );
 }
 
 function ReplayPreview({ previewState, selectedJob }) {
@@ -204,7 +304,7 @@ function ReplayJobsTable({ jobs, loading, onSelectJob, selectedJobId }) {
                   </span>
                 </td>
                 <td>
-                  {job.replayedCount}/{job.progressTotal}
+                  <ProgressMeter compact job={job} />
                 </td>
                 <td>{formatUpdatedAt(job.updatedAt)}</td>
               </tr>
@@ -297,6 +397,7 @@ export default function ReplayWorkspace() {
     () => jobsState.jobs.find((job) => job.jobId === selectedJobId) ?? null,
     [jobsState.jobs, selectedJobId]
   );
+  const selectedJobProgress = selectedJob ? getJobProgress(selectedJob) : null;
 
   function updateFormField(field, value) {
     setFormState((currentState) => ({
@@ -648,8 +749,26 @@ export default function ReplayWorkspace() {
                 <div>
                   <dt>Progress</dt>
                   <dd>
-                    {selectedJob.replayedCount}/{selectedJob.progressTotal}
+                    <ProgressMeter job={selectedJob} />
                   </dd>
+                </div>
+                <div>
+                  <dt>Current offset</dt>
+                  <dd>{selectedJobProgress.currentOffset ?? 'Pending'}</dd>
+                </div>
+                <div>
+                  <dt>Throughput</dt>
+                  <dd>
+                    {formatRate(selectedJobProgress.averageMessagesPerSecond)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>ETA</dt>
+                  <dd>{formatEta(selectedJobProgress)}</dd>
+                </div>
+                <div>
+                  <dt>Elapsed</dt>
+                  <dd>{formatDuration(selectedJobProgress.elapsedMs, 'Waiting')}</dd>
                 </div>
                 <div>
                   <dt>Updated</dt>
