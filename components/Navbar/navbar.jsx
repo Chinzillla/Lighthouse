@@ -12,6 +12,7 @@ export default function NavBar() {
       </Link>
       <nav className={styles.navActions} aria-label="Primary navigation">
         <a href="#metrics">Metrics</a>
+        <a href="#replay">Replay</a>
         <a href="#roadmap">Roadmap</a>
         <a
           href="https://github.com/Chinzillla/Lighthouse"

@@ -1,0 +1,392 @@
+.workspace {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  color: #2f7d62;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.sectionHeader h2 {
+  max-width: 700px;
+  margin: 0;
+  color: #18201b;
+  font-size: 1.8rem;
+  line-height: 1.18;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 280px;
+  margin: 0;
+}
+
+.meta div,
+.panel,
+.previewItem {
+  border: 1px solid #dfe4dc;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 40px rgba(33, 42, 35, 0.06);
+}
+
+.meta div {
+  padding: 12px 14px;
+}
+
+.meta dt,
+.selectedJob dt,
+.previewItem dt {
+  color: #71796f;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.meta dd,
+.selectedJob dd,
+.previewItem dd {
+  margin: 4px 0 0;
+  color: #202521;
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.topGrid,
+.bottomGrid {
+  display: grid;
+  gap: 16px;
+}
+
+.topGrid {
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+}
+
+.bottomGrid {
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+}
+
+.panel {
+  padding: 20px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.panelHeader h3 {
+  margin: 0;
+  color: #202521;
+  font-size: 1.05rem;
+}
+
+.panelHeader p {
+  margin: 8px 0 0;
+  color: #697267;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.form label {
+  display: grid;
+  gap: 8px;
+}
+
+.form span {
+  color: #3d453e;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.form input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #cfd6cb;
+  border-radius: 8px;
+  background: #fbfcf9;
+  color: #202521;
+  font: inherit;
+}
+
+.form input:focus-visible {
+  border-color: #2f7d62;
+  outline: 2px solid rgba(47, 125, 98, 0.14);
+  outline-offset: 1px;
+}
+
+.formActions,
+.selectionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.formActions {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+}
+
+.formActions button,
+.selectionActions button,
+.jobSelect {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #c2cec0;
+  border-radius: 8px;
+  background: #203c31;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+}
+
+.formActions button:disabled,
+.selectionActions button:disabled {
+  opacity: 0.55;
+}
+
+.secondaryButton {
+  background: #ffffff !important;
+  color: #2d3930 !important;
+}
+
+.selectedJob {
+  display: grid;
+  gap: 18px;
+}
+
+.selectedJob dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.panelStatus,
+.panelError,
+.panelSuccess {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.panelStatus {
+  color: #646d63;
+}
+
+.panelError {
+  color: #a34031;
+  font-weight: 700;
+}
+
+.panelSuccess {
+  color: #2f7d62;
+  font-weight: 700;
+}
+
+.previewSummary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.previewSummary div {
+  padding: 12px 14px;
+  border: 1px solid #dfe4dc;
+  border-radius: 8px;
+  background: #fafbf8;
+}
+
+.previewSummary dt {
+  color: #71796f;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.previewSummary dd {
+  margin: 4px 0 0;
+  color: #202521;
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.previewList {
+  display: grid;
+  gap: 12px;
+  max-height: 540px;
+  overflow: auto;
+}
+
+.previewItem {
+  padding: 16px;
+}
+
+.previewItem header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.previewItem strong {
+  color: #18201b;
+  font-size: 0.98rem;
+}
+
+.previewItem header span {
+  color: #6d756d;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.previewItem pre {
+  margin: 12px 0;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 8px;
+  background: #18201b;
+  color: #f1f5ef;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono,
+    Courier New, monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.previewItem dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.tableWrap {
+  overflow: auto;
+}
+
+.jobTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.jobTable th,
+.jobTable td {
+  padding: 12px 10px;
+  border-top: 1px solid #e6ebe4;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.jobTable thead th {
+  padding-top: 0;
+  border-top: 0;
+  color: #71796f;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.jobRowSelected {
+  background: #f4f8f4;
+}
+
+.jobSelect {
+  display: grid;
+  width: 100%;
+  justify-items: start;
+  gap: 2px;
+}
+
+.jobSelect small {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.73rem;
+  font-weight: 600;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #eef2ed;
+  color: #334036;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.statusPill[data-status='running'] {
+  background: #e7efe8;
+  color: #24634f;
+}
+
+.statusPill[data-status='completed'] {
+  background: #e2f2e8;
+  color: #226447;
+}
+
+.statusPill[data-status='failed'] {
+  background: #f6e8e4;
+  color: #a34031;
+}
+
+.statusPill[data-status='cancelled'] {
+  background: #f2eee8;
+  color: #715d44;
+}
+
+@media (max-width: 980px) {
+  .sectionHeader,
+  .topGrid,
+  .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .form,
+  .meta,
+  .previewSummary,
+  .selectedJob dl,
+  .previewItem dl {
+    grid-template-columns: 1fr;
+  }
+
+  .previewItem header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
