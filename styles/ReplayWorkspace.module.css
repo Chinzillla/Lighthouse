@@ -116,7 +116,8 @@
   gap: 8px;
 }
 
-.form span {
+.form span,
+.modeField span {
   color: #3d453e;
   font-size: 0.85rem;
   font-weight: 700;
@@ -137,6 +138,41 @@
   border-color: #2f7d62;
   outline: 2px solid rgba(47, 125, 98, 0.14);
   outline-offset: 1px;
+}
+
+.modeField {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+}
+
+.modeControl {
+  display: inline-flex;
+  width: fit-content;
+  overflow: hidden;
+  border: 1px solid #cfd6cb;
+  border-radius: 8px;
+  background: #fbfcf9;
+}
+
+.modeControl button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-right: 1px solid #cfd6cb;
+  background: transparent;
+  color: #3d453e;
+  font: inherit;
+  font-weight: 700;
+}
+
+.modeControl button:last-child {
+  border-right: 0;
+}
+
+.modeControl .modeButtonActive {
+  background: #203c31;
+  color: #ffffff;
 }
 
 .formActions,
