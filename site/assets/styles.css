@@ -21,10 +21,12 @@ html {
   line-height: 1.5;
   background: var(--background);
   color: var(--text);
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
+  overflow-wrap: break-word;
 }
 
 a {
@@ -33,8 +35,9 @@ a {
 
 .layout {
   min-height: 100vh;
+  width: 100%;
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 280px minmax(0, 1fr);
 }
 
 .sidebar {
@@ -45,6 +48,7 @@ a {
   top: 0;
   align-self: start;
   min-height: 100vh;
+  min-width: 0;
 }
 
 .brand {
@@ -68,6 +72,7 @@ a {
   color: var(--text);
   padding: 10px 12px;
   border-radius: 8px;
+  overflow-wrap: anywhere;
 }
 
 .nav a.active,
@@ -77,6 +82,8 @@ a {
 
 .main {
   padding: 40px 48px 80px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .eyebrow {
@@ -95,7 +102,7 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(2rem, 4vw, 3rem);
+  font-size: 2.75rem;
 }
 
 h2 {
@@ -134,11 +141,12 @@ ol {
   padding: 20px 22px;
   box-shadow: var(--shadow);
   margin-top: 24px;
+  min-width: 0;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
   gap: 16px;
   margin-top: 24px;
 }
@@ -148,6 +156,7 @@ ol {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 18px;
+  min-width: 0;
 }
 
 .grid h3 {
@@ -159,9 +168,12 @@ code {
   background: var(--code-bg);
   padding: 0.12rem 0.32rem;
   border-radius: 4px;
+  overflow-wrap: anywhere;
 }
 
 pre {
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   background: var(--code-bg);
   padding: 16px;
@@ -172,10 +184,14 @@ pre {
 pre code {
   background: transparent;
   padding: 0;
+  overflow-wrap: normal;
 }
 
 table {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -186,6 +202,7 @@ table {
 th,
 td {
   text-align: left;
+  vertical-align: top;
   padding: 12px 14px;
   border-bottom: 1px solid var(--border);
 }
@@ -203,6 +220,7 @@ tbody tr:last-child td {
   background: var(--surface);
   padding: 14px 16px;
   margin: 20px 0;
+  min-width: 0;
 }
 
 .footer {
@@ -215,7 +233,7 @@ tbody tr:last-child td {
 
 @media (max-width: 920px) {
   .layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .sidebar {
@@ -225,7 +243,29 @@ tbody tr:last-child td {
     border-bottom: 1px solid var(--border);
   }
 
+  .nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .main {
     padding: 28px 20px 56px;
+  }
+
+  h1 {
+    font-size: 2.25rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .sidebar {
+    padding: 24px 16px;
+  }
+
+  .main {
+    padding: 24px 16px 48px;
+  }
+
+  h1 {
+    font-size: 1.9rem;
   }
 }
