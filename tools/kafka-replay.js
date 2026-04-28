@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { createKafka, parseBrokers } = require('./kafka-config');
 
 const DEFAULT_CLIENT_ID = 'lighthouse-replay-cli';
+const DEFAULT_MESSAGES_PER_SECOND = null;
 const DEFAULT_PROGRESS_INTERVAL = 25;
 const BOOLEAN_ARGS = new Set(['dry-run']);
 const REPLAY_MODES = Object.freeze({
@@ -12,13 +13,14 @@ const REPLAY_MODES = Object.freeze({
 function formatUsage() {
   return [
     'Usage:',
-    '  node tools/kafka-replay.js --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset> [--brokers <host:port,...>] [--client-id <id>] [--job-id <id>] [--dry-run]',
-    '  node tools/kafka-replay.js --source <topic> --destination <topic> --partition <id> --start-timestamp <timestamp> --end-timestamp <timestamp> [--brokers <host:port,...>] [--client-id <id>] [--job-id <id>] [--dry-run]',
+    '  node tools/kafka-replay.js --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset> [--brokers <host:port,...>] [--client-id <id>] [--job-id <id>] [--messages-per-second <count>] [--dry-run]',
+    '  node tools/kafka-replay.js --source <topic> --destination <topic> --partition <id> --start-timestamp <timestamp> --end-timestamp <timestamp> [--brokers <host:port,...>] [--client-id <id>] [--job-id <id>] [--messages-per-second <count>] [--dry-run]',
     '',
     'Examples:',
     '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25',
     '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z',
     '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25 --brokers localhost:19092,localhost:19093,localhost:19094',
+    '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25 --messages-per-second 10',
     '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25 --dry-run',
     '',
     'Timestamp replay uses a half-open window: start is inclusive, end is exclusive.',
@@ -122,6 +124,12 @@ function parseOptionalInteger(name, value, defaultValue) {
   return parseRequiredInteger(name, value);
 }
 
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 function hasCliValue(value) {
   return value !== undefined && value !== null && String(value).trim() !== '';
 }
@@ -190,6 +198,11 @@ function normalizeReplayOptions(input, env = process.env) {
     brokers: parseBrokers(input.brokers || env.KAFKA_BROKERS),
     clientId: (input['client-id'] || env.KAFKA_CLIENT_ID || DEFAULT_CLIENT_ID).trim(),
     dryRun: parseCliBoolean('dry-run', input['dry-run'], false),
+    messagesPerSecond: parseOptionalInteger(
+      'messages-per-second',
+      input['messages-per-second'],
+      DEFAULT_MESSAGES_PER_SECOND
+    ),
     progressInterval: parseOptionalInteger(
       'progress-every',
       input['progress-every'],
@@ -235,6 +248,10 @@ function validateReplayOptions(options) {
 
   if (options.progressInterval < 1) {
     throw new Error('"--progress-every" must be a positive integer');
+  }
+
+  if (options.messagesPerSecond !== null && options.messagesPerSecond < 1) {
+    throw new Error('"--messages-per-second" must be a positive integer');
   }
 }
 
@@ -478,6 +495,34 @@ async function resolveReplayPlanWithKafka(
   }
 }
 
+function createMessageThrottle({
+  messagesPerSecond = DEFAULT_MESSAGES_PER_SECOND,
+  nowMs = () => Date.now(),
+  sleep = delay,
+} = {}) {
+  if (messagesPerSecond === null || messagesPerSecond === undefined) {
+    return async () => {};
+  }
+
+  const intervalMs = 1000 / messagesPerSecond;
+  let nextAvailableAt = null;
+
+  return async () => {
+    const currentTime = nowMs();
+
+    if (nextAvailableAt === null) {
+      nextAvailableAt = currentTime + intervalMs;
+      return;
+    }
+
+    if (currentTime < nextAvailableAt) {
+      await sleep(nextAvailableAt - currentTime);
+    }
+
+    nextAvailableAt = Math.max(nowMs(), nextAvailableAt) + intervalMs;
+  };
+}
+
 async function replayOffsetRange({
   consumer,
   producer,
@@ -490,10 +535,18 @@ async function replayOffsetRange({
   startOffset,
   endOffset,
   dryRun = false,
+  messagesPerSecond = DEFAULT_MESSAGES_PER_SECOND,
+  nowMs = () => Date.now(),
   progressInterval = DEFAULT_PROGRESS_INTERVAL,
   replayJobId,
+  sleep = delay,
 }) {
   const totalMessages = endOffset - startOffset + 1;
+  const waitForReplaySlot = createMessageThrottle({
+    messagesPerSecond,
+    nowMs,
+    sleep,
+  });
   let replayedCount = 0;
   let lastReplayedOffset = null;
   let stopRequested = false;
@@ -608,6 +661,7 @@ async function replayOffsetRange({
             totalMessages,
           });
         } else {
+          await waitForReplaySlot();
           await producer.send({
             topic: destinationTopic,
             messages: [
@@ -633,6 +687,7 @@ async function replayOffsetRange({
           replayedCount,
           replayJobId,
           sourceTopic,
+          messagesPerSecond,
           totalMessages,
         });
 
@@ -680,8 +735,10 @@ async function runReplay(rawOptions, dependencies = {}) {
     env = process.env,
     kafkaFactory = createKafka,
     logger = console,
+    nowMs = () => Date.now(),
     onProgress = async () => {},
     onPreviewMessage = async () => {},
+    sleep = delay,
   } = dependencies;
   const options = normalizeReplayOptions(rawOptions, env);
   validateReplayOptions(options);
@@ -704,9 +761,9 @@ async function runReplay(rawOptions, dependencies = {}) {
       topic: options.sourceTopic,
     });
 
-    logger.log(
-      `Validated replay plan: ${options.sourceTopic}[${options.partition}] offsets ${replayPlan.startOffset}-${replayPlan.endOffset} -> ${options.destinationTopic}[${options.partition}] (${replayPlan.totalMessages} messages, job ${options.replayJobId})`
-    );
+      logger.log(
+        `Validated replay plan: ${options.sourceTopic}[${options.partition}] offsets ${replayPlan.startOffset}-${replayPlan.endOffset} -> ${options.destinationTopic}[${options.partition}] (${replayPlan.totalMessages} messages, job ${options.replayJobId}${options.messagesPerSecond ? `, throttle ${options.messagesPerSecond}/s` : ''})`
+      );
 
     const summary = await replayOffsetRange({
       consumer,
@@ -714,12 +771,15 @@ async function runReplay(rawOptions, dependencies = {}) {
       dryRun: options.dryRun,
       endOffset: replayPlan.endOffset,
       logger,
+      messagesPerSecond: options.messagesPerSecond,
+      nowMs,
       onProgress,
       onPreviewMessage,
       partition: options.partition,
       producer,
       progressInterval: options.progressInterval,
       replayJobId: options.replayJobId,
+      sleep,
       sourceTopic: options.sourceTopic,
       startOffset: replayPlan.startOffset,
     });
@@ -741,6 +801,7 @@ async function runReplay(rawOptions, dependencies = {}) {
       earliestAvailableOffset: replayPlan.earliestOffset,
       endExclusiveOffset: replayPlan.endExclusiveOffset,
       endTimestamp: replayPlan.endTimestamp,
+      messagesPerSecond: options.messagesPerSecond,
       nextOffset: replayPlan.nextOffset,
       replayMode: replayPlan.replayMode,
       replayJobId: options.replayJobId,
@@ -788,11 +849,13 @@ if (require.main === module) {
 
 module.exports = {
   DEFAULT_CLIENT_ID,
+  DEFAULT_MESSAGES_PER_SECOND,
   DEFAULT_PROGRESS_INTERVAL,
   REPLAY_MODES,
   buildReplayHeaders,
   buildKafkaEnv,
   createPreviewMessage,
+  createMessageThrottle,
   createReplayJobId,
   createReplayGroupId,
   findPartitionOffsets,

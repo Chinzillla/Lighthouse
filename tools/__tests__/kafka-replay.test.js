@@ -5,6 +5,7 @@ const {
   normalizeReplayOptions,
   parseCliBoolean,
   parseCliArgs,
+  replayOffsetRange,
   resolveReplayPlan,
   runReplay,
   validateReplayOptions,
@@ -61,6 +62,7 @@ describe('Kafka replay CLI', () => {
       endOffset: 25,
       endTimestamp: null,
       endTimestampMs: null,
+      messagesPerSecond: null,
       partition: 2,
       progressInterval: 25,
       replayMode: 'offset',
@@ -157,6 +159,23 @@ describe('Kafka replay CLI', () => {
         startOffset: 5,
       })
     ).toThrow('Source and destination topics must be different');
+
+    expect(() =>
+      validateReplayOptions({
+        brokers: ['localhost:19092'],
+        clientId: 'lighthouse-replay-cli',
+        destinationTopic: 'orders-replay',
+        dryRun: false,
+        endOffset: 7,
+        messagesPerSecond: 0,
+        partition: 0,
+        progressInterval: 25,
+        replayMode: 'offset',
+        replayJobId: 'job-1',
+        sourceTopic: 'orders',
+        startOffset: 5,
+      })
+    ).toThrow('"--messages-per-second" must be a positive integer');
   });
 
   it('resolves partition bounds and rejects ranges outside retained offsets', async () => {
@@ -451,6 +470,94 @@ describe('Kafka replay CLI', () => {
     expect(logger.log).toHaveBeenCalledWith(
       'Replay complete: copied 2 messages from orders[0] into orders-replay[0]'
     );
+  });
+
+  it('paces produced replay messages when a throughput cap is configured', async () => {
+    const logger = createLogger();
+    const eventHandlers = {
+      CRASH: [],
+      GROUP_JOIN: [],
+      STOP: [],
+    };
+    let currentTimeMs = 0;
+    const sentAt = [];
+    const sleep = jest.fn(async (durationMs) => {
+      currentTimeMs += durationMs;
+    });
+
+    const producer = {
+      send: jest.fn(async () => {
+        sentAt.push(currentTimeMs);
+      }),
+    };
+    const consumer = {
+      events: {
+        CRASH: 'CRASH',
+        GROUP_JOIN: 'GROUP_JOIN',
+        STOP: 'STOP',
+      },
+      on: jest.fn((event, handler) => {
+        eventHandlers[event].push(handler);
+        return () => {};
+      }),
+      pause: jest.fn(),
+      resume: jest.fn(),
+      seek: jest.fn(),
+      stop: jest.fn().mockImplementation(async () => {
+        await Promise.all(eventHandlers.STOP.map((handler) => handler({})));
+      }),
+      run: jest.fn(({ eachMessage }) => {
+        queueMicrotask(async () => {
+          await Promise.all(eventHandlers.GROUP_JOIN.map((handler) => handler({})));
+          await eachMessage({
+            message: {
+              headers: {},
+              key: Buffer.from('order-0'),
+              offset: '0',
+              value: Buffer.from('payload-0'),
+            },
+            partition: 0,
+            topic: 'orders',
+          });
+          await eachMessage({
+            message: {
+              headers: {},
+              key: Buffer.from('order-1'),
+              offset: '1',
+              value: Buffer.from('payload-1'),
+            },
+            partition: 0,
+            topic: 'orders',
+          });
+        });
+
+        return Promise.resolve();
+      }),
+    };
+
+    await expect(
+      replayOffsetRange({
+        consumer,
+        destinationTopic: 'orders-replay',
+        endOffset: 1,
+        logger,
+        messagesPerSecond: 2,
+        nowMs: () => currentTimeMs,
+        partition: 0,
+        producer,
+        replayJobId: 'job-throttle',
+        sleep,
+        sourceTopic: 'orders',
+        startOffset: 0,
+      })
+    ).resolves.toMatchObject({
+      replayedCount: 2,
+      totalMessages: 2,
+    });
+
+    expect(sentAt).toEqual([0, 500]);
+    expect(sleep).toHaveBeenCalledTimes(1);
+    expect(sleep).toHaveBeenCalledWith(500);
   });
 
   it('supports dry-run preview without producing replay messages', async () => {

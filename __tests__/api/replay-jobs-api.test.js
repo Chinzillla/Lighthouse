@@ -29,6 +29,7 @@ describe('Replay job API routes', () => {
             destination: 'orders-replay',
             end: '12',
             'job-id': 'job-api-1',
+            'messages-per-second': '12',
             partition: '0',
             source: 'orders',
             start: '10',
@@ -41,6 +42,7 @@ describe('Replay job API routes', () => {
       expect(createResponse.statusCode).toBe(201);
       expect(createResponse.body.job).toMatchObject({
         jobId: 'job-api-1',
+        messagesPerSecond: 12,
         progressTotal: 3,
         status: JOB_STATUSES.DRAFT,
       });
