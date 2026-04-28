@@ -32,7 +32,7 @@ Implemented today:
 
 Planned next:
 
-- MVP verification, quality control, and alpha release hardening
+- Phase 6.5 MVP acceptance pass and alpha release hardening
 
 ## Architecture
 
