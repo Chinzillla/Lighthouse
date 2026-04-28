@@ -124,9 +124,55 @@ function parseOptionalInteger(name, value, defaultValue) {
   return parseRequiredInteger(name, value);
 }
 
-function delay(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+function createAbortError(message = 'Replay cancelled') {
+  const error = new Error(message);
+  error.name = 'AbortError';
+  error.code = 'REPLAY_CANCELLED';
+  return error;
+}
+
+function getAbortReason(signal) {
+  if (signal?.reason instanceof Error) {
+    return signal.reason;
+  }
+
+  if (signal?.reason) {
+    return createAbortError(String(signal.reason));
+  }
+
+  return createAbortError();
+}
+
+function throwIfAborted(signal) {
+  if (signal?.aborted) {
+    throw getAbortReason(signal);
+  }
+}
+
+function delay(ms, { signal } = {}) {
+  return new Promise((resolve, reject) => {
+    throwIfAborted(signal);
+
+    let timeout;
+    function cleanup() {
+      if (signal) {
+        signal.removeEventListener('abort', onAbort);
+      }
+    }
+    function onAbort() {
+      clearTimeout(timeout);
+      cleanup();
+      reject(getAbortReason(signal));
+    }
+
+    timeout = setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
+
+    if (signal) {
+      signal.addEventListener('abort', onAbort, { once: true });
+    }
   });
 }
 
@@ -499,15 +545,20 @@ function createMessageThrottle({
   messagesPerSecond = DEFAULT_MESSAGES_PER_SECOND,
   nowMs = () => Date.now(),
   sleep = delay,
+  signal,
 } = {}) {
   if (messagesPerSecond === null || messagesPerSecond === undefined) {
-    return async () => {};
+    return async () => {
+      throwIfAborted(signal);
+    };
   }
 
   const intervalMs = 1000 / messagesPerSecond;
   let nextAvailableAt = null;
 
   return async () => {
+    throwIfAborted(signal);
+
     const currentTime = nowMs();
 
     if (nextAvailableAt === null) {
@@ -516,9 +567,14 @@ function createMessageThrottle({
     }
 
     if (currentTime < nextAvailableAt) {
-      await sleep(nextAvailableAt - currentTime);
+      if (signal) {
+        await sleep(nextAvailableAt - currentTime, { signal });
+      } else {
+        await sleep(nextAvailableAt - currentTime);
+      }
     }
 
+    throwIfAborted(signal);
     nextAvailableAt = Math.max(nowMs(), nextAvailableAt) + intervalMs;
   };
 }
@@ -539,16 +595,21 @@ async function replayOffsetRange({
   nowMs = () => Date.now(),
   progressInterval = DEFAULT_PROGRESS_INTERVAL,
   replayJobId,
+  signal,
   sleep = delay,
 }) {
+  throwIfAborted(signal);
+
   const totalMessages = endOffset - startOffset + 1;
   const waitForReplaySlot = createMessageThrottle({
     messagesPerSecond,
     nowMs,
+    signal,
     sleep,
   });
   let replayedCount = 0;
   let lastReplayedOffset = null;
+  let cancelRequested = false;
   let stopRequested = false;
   let resolveCompletion;
   let rejectCompletion;
@@ -596,12 +657,39 @@ async function replayOffsetRange({
     });
   };
 
-  const groupJoin = new Promise((resolve) => {
+  const requestCancellation = () => {
+    cancelRequested = true;
+    requestStop();
+  };
+  if (signal) {
+    signal.addEventListener('abort', requestCancellation, { once: true });
+  }
+
+  let removeGroupJoinAbortListener = () => {};
+  const groupJoin = new Promise((resolve, reject) => {
+    function onAbort() {
+      removeGroupJoinAbortListener();
+      reject(getAbortReason(signal));
+    }
+
     consumer.on(consumer.events.GROUP_JOIN, () => {
+      removeGroupJoinAbortListener();
       resolve();
     });
+
+    if (signal) {
+      signal.addEventListener('abort', onAbort, { once: true });
+      removeGroupJoinAbortListener = () => {
+        signal.removeEventListener('abort', onAbort);
+      };
+    }
   });
   consumer.on(consumer.events.STOP, () => {
+    if (cancelRequested || signal?.aborted) {
+      completeWithError(getAbortReason(signal));
+      return;
+    }
+
     if (replayedCount !== totalMessages) {
       completeWithError(
         new Error(
@@ -622,6 +710,11 @@ async function replayOffsetRange({
     .run({
       autoCommit: false,
       eachMessage: async ({ message, partition: currentPartition, topic }) => {
+        if (signal?.aborted) {
+          requestCancellation();
+          return;
+        }
+
         if (stopRequested || topic !== sourceTopic || currentPartition !== partition) {
           return;
         }
@@ -662,6 +755,7 @@ async function replayOffsetRange({
           });
         } else {
           await waitForReplaySlot();
+          throwIfAborted(signal);
           await producer.send({
             topic: destinationTopic,
             messages: [
@@ -713,21 +807,32 @@ async function replayOffsetRange({
       completeWithError(error);
     });
 
-  consumer.pause([{ topic: sourceTopic }]);
-  await groupJoin;
-  consumer.seek({
-    offset: String(startOffset),
-    partition,
-    topic: sourceTopic,
-  });
-  consumer.resume([
-    {
-      partitions: [partition],
+  try {
+    consumer.pause([{ topic: sourceTopic }]);
+    await groupJoin;
+    consumer.seek({
+      offset: String(startOffset),
+      partition,
       topic: sourceTopic,
-    },
-  ]);
+    });
+    consumer.resume([
+      {
+        partitions: [partition],
+        topic: sourceTopic,
+      },
+    ]);
 
-  return completion;
+    return await completion;
+  } catch (error) {
+    completeWithError(error);
+    return await completion;
+  } finally {
+    removeGroupJoinAbortListener();
+
+    if (signal) {
+      signal.removeEventListener('abort', requestCancellation);
+    }
+  }
 }
 
 async function runReplay(rawOptions, dependencies = {}) {
@@ -738,8 +843,11 @@ async function runReplay(rawOptions, dependencies = {}) {
     nowMs = () => Date.now(),
     onProgress = async () => {},
     onPreviewMessage = async () => {},
+    signal,
     sleep = delay,
   } = dependencies;
+  throwIfAborted(signal);
+
   const options = normalizeReplayOptions(rawOptions, env);
   validateReplayOptions(options);
 
@@ -756,6 +864,8 @@ async function runReplay(rawOptions, dependencies = {}) {
 
   try {
     const replayPlan = await resolveReplayPlan(admin, options);
+    throwIfAborted(signal);
+
     await consumer.subscribe({
       fromBeginning: true,
       topic: options.sourceTopic,
@@ -779,6 +889,7 @@ async function runReplay(rawOptions, dependencies = {}) {
       producer,
       progressInterval: options.progressInterval,
       replayJobId: options.replayJobId,
+      signal,
       sleep,
       sourceTopic: options.sourceTopic,
       startOffset: replayPlan.startOffset,
@@ -856,6 +967,7 @@ module.exports = {
   buildKafkaEnv,
   createPreviewMessage,
   createMessageThrottle,
+  createAbortError,
   createReplayJobId,
   createReplayGroupId,
   findPartitionOffsets,
@@ -872,5 +984,6 @@ module.exports = {
   resolveReplayPlan,
   resolveReplayPlanWithKafka,
   runReplay,
+  throwIfAborted,
   validateReplayOptions,
 };

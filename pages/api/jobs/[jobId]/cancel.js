@@ -1,16 +1,18 @@
 import replayJobHttp from '../../../../lib/replay-jobs/http';
-import replayJobService from '../../../../lib/replay-jobs/service';
+import replayJobRunner from '../../../../lib/replay-jobs/runner';
 
 const {
   applyNoStore,
   getJobIdFromRequest,
   sendMethodNotAllowed,
   sendServiceError,
-  withReplayJobStore,
 } = replayJobHttp;
-const { cancelReplayJob } = replayJobService;
+const { cancelReplayJobInBackground } = replayJobRunner;
 
 function createHandler(dependencies = {}) {
+  const cancelInBackground =
+    dependencies.cancelInBackground || cancelReplayJobInBackground;
+
   return async function handler(request, response) {
     applyNoStore(response);
 
@@ -20,14 +22,10 @@ function createHandler(dependencies = {}) {
     }
 
     try {
-      const job = await withReplayJobStore(
-        ({ now, store }) =>
-          cancelReplayJob(getJobIdFromRequest(request), {
-            now,
-            store,
-          }),
-        dependencies
-      );
+      const job = cancelInBackground(getJobIdFromRequest(request), {
+        env: dependencies.env,
+        now: dependencies.now,
+      });
 
       response.status(200).json({ job });
     } catch (error) {

@@ -300,6 +300,44 @@ describe('Replay job API routes', () => {
     }
   });
 
+  it('delegates running-job cancellation to the background runner', async () => {
+    const { cleanup, env } = createTempReplayEnvironment();
+    const cancelInBackground = jest.fn(() => ({
+      completedAt: '2026-04-28T17:25:00.000Z',
+      errorMessage: null,
+      jobId: 'job-api-running',
+      status: JOB_STATUSES.CANCELLED,
+    }));
+
+    try {
+      const cancelResponse = createMockResponse();
+      await jobCancelRoute.createHandler({
+        cancelInBackground,
+        env,
+        now: () => '2026-04-28T17:25:00.000Z',
+      })(
+        createMockRequest({
+          method: 'POST',
+          query: { jobId: 'job-api-running' },
+        }),
+        cancelResponse
+      );
+
+      expect(cancelInBackground).toHaveBeenCalledWith('job-api-running', {
+        env,
+        now: expect.any(Function),
+      });
+      expect(cancelResponse.statusCode).toBe(200);
+      expect(cancelResponse.body.job).toMatchObject({
+        completedAt: '2026-04-28T17:25:00.000Z',
+        jobId: 'job-api-running',
+        status: JOB_STATUSES.CANCELLED,
+      });
+    } finally {
+      cleanup();
+    }
+  });
+
   it('enforces allowed methods and not-found responses on nested routes', async () => {
     const { cleanup, env } = createTempReplayEnvironment();
 
