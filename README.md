@@ -32,7 +32,7 @@ Implemented today:
 
 Planned next:
 
-- Phase 6.5 MVP acceptance pass and alpha release hardening
+- Alpha release quality control and hardening
 
 ## Architecture
 
@@ -387,6 +387,8 @@ behavior, and traceability headers.
 See [docs/REPLAY_JOBS.md](docs/REPLAY_JOBS.md) for the persisted job workflow.
 See [docs/REPLAY_API.md](docs/REPLAY_API.md) for the replay job HTTP contract.
 See [docs/REPLAY_UI.md](docs/REPLAY_UI.md) for the application workflow over the API.
+See [docs/MVP_ACCEPTANCE.md](docs/MVP_ACCEPTANCE.md) for the final MVP
+acceptance checklist and verification runbook.
 
 ## Quality Gates
 

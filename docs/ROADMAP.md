@@ -15,10 +15,11 @@ Completed:
 - Phase 6 message-per-second throttling
 - Phase 6 richer progress metrics
 - Phase 6 running-job cancellation
+- Phase 6.5 MVP acceptance pass
 
 Next focus:
 
-- Phase 6.5 MVP acceptance pass
+- Alpha release quality control
 
 ## Phase 0: Foundation
 
