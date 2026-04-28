@@ -24,11 +24,13 @@
     "metrics:exporter": "node tools/kafka-metrics-exporter.js",
     "demo:producer": "node tools/kafka-demo-producer.js",
     "replay:cli": "node tools/kafka-replay.js",
+    "replay:jobs": "node tools/kafka-replay-jobs.js",
     "test": "jest",
     "test:ci": "jest --runInBand",
-    "test:kafka:integration": "jest --runInBand tools/__tests__/kafka-replay.integration.test.js"
+    "test:kafka:integration": "jest --runInBand tools/__tests__/kafka-replay.integration.test.js tools/__tests__/kafka-replay-jobs.integration.test.js"
   },
   "dependencies": {
+    "better-sqlite3": "^12.9.0",
     "chart.js": "^4.5.1",
     "kafkajs": "^2.2.4",
     "next": "^16.2.4",

@@ -1,7 +1,8 @@
 # Operations Notes
 
 This document covers the stable run paths for the current Lighthouse foundation:
-the dashboard, Prometheus, Docker sample Kafka, replay CLI, and CI checks.
+the dashboard, Prometheus, Docker sample Kafka, replay CLI, replay jobs, and
+CI checks.
 
 ## Local Demo Stack
 
@@ -37,6 +38,13 @@ Preview the same replay without producing:
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094 --dry-run --job-id sample-preview
 ```
 
+Create a persisted draft job and start it:
+
+```bash
+npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 0 --end 5 --job-id sample-job
+npm run replay:jobs -- start --job-id sample-job
+```
+
 For an existing Kafka or Confluent Cloud cluster, set the Kafka variables in
 `.env` and run:
 
@@ -50,6 +58,9 @@ outside Docker against the sample cluster, point it at:
 ```text
 localhost:19092,localhost:19093,localhost:19094
 ```
+
+The replay jobs store uses `data/lighthouse.sqlite` by default. Override it
+with `LIGHTHOUSE_DB_PATH` if you need to move the local state file.
 
 ## Local App Development
 
@@ -143,6 +154,15 @@ If the replay CLI rejects the run before consuming messages, check:
 - the chosen partition exists on both topics
 - the source topic has retained the requested offset range
 - the end offset is lower than the topic's next unread offset
+
+### Replay Job Start Fails
+
+If `npm run replay:jobs -- start --job-id <id>` fails immediately, check:
+
+- the job is in `draft` or `failed` state
+- the current shell has the right `KAFKA_*` settings
+- the sample stack or external Kafka cluster is reachable
+- the local SQLite file is writable
 
 ## CI Parity
 

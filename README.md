@@ -20,6 +20,7 @@ Implemented today:
 - Kafka metrics exporter that supports local Kafka and SASL/SSL clusters
 - Offset-range Kafka replay CLI for one topic partition and one closed offset range
 - Dry-run replay preview and replay metadata headers for traceability
+- Replay job workflow with SQLite persistence and job status tracking
 - Static GitHub Pages documentation site source in `site/`
 - Jest component tests
 - GitHub Actions workflow for dependency audit, lint, tests, build, and Docker checks
@@ -27,7 +28,6 @@ Implemented today:
 
 Planned next:
 
-- Persistent replay job model
 - REST API for replay job creation, status, preview, and cancellation
 - Minimal UI for replay creation and job monitoring
 
@@ -203,6 +203,32 @@ Replay metadata headers added during an actual replay:
 Dry-run mode validates the request and previews the records without writing to
 the destination topic.
 
+## Replay Jobs
+
+Phase 3 adds a job workflow backed by local SQLite persistence.
+
+Create a draft job:
+
+```bash
+npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 10 --end 25 --job-id incident-2026-04-28
+```
+
+Start it:
+
+```bash
+npm run replay:jobs -- start --job-id incident-2026-04-28
+```
+
+Inspect jobs:
+
+```bash
+npm run replay:jobs -- list
+npm run replay:jobs -- show --job-id incident-2026-04-28
+```
+
+By default, the job store lives at `data/lighthouse.sqlite`. Override it with
+`LIGHTHOUSE_DB_PATH` when you need a different location.
+
 ## Local Development
 
 Use this when working on the Next.js app itself.
@@ -240,6 +266,7 @@ See [docs/KAFKA_CONFIGURATION.md](docs/KAFKA_CONFIGURATION.md) for the full
 Kafka configuration guide.
 See [docs/REPLAY_CLI.md](docs/REPLAY_CLI.md) for replay semantics, dry-run
 behavior, and traceability headers.
+See [docs/REPLAY_JOBS.md](docs/REPLAY_JOBS.md) for the persisted job workflow.
 
 ## Quality Gates
 

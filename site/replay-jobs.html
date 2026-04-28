@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighthouse Docs | Replay Jobs</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1 class="brand">Lighthouse</h1>
+        <p class="tagline">Docs for the Kafka replay engine rebuild.</p>
+        <nav class="nav">
+          <a href="./index.html">Overview</a>
+          <a href="./getting-started.html">Getting Started</a>
+          <a href="./replay-cli.html">Replay CLI</a>
+          <a class="active" href="./replay-jobs.html">Replay Jobs</a>
+          <a href="./architecture.html">Architecture</a>
+          <a href="./operations.html">Operations</a>
+          <a href="./roadmap.html">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <p class="eyebrow">Replay Jobs</p>
+        <h1>Persist replay work as local jobs instead of one-off terminal commands.</h1>
+        <p class="lede">
+          Phase 3 adds a SQLite-backed job workflow. Jobs are stored locally,
+          survive process restarts, and track status plus replay progress over
+          time.
+        </p>
+
+        <h2>Default Storage</h2>
+        <pre><code>data/lighthouse.sqlite</code></pre>
+        <p>Override it with <code>LIGHTHOUSE_DB_PATH</code> when you need a different location.</p>
+
+        <h2>Job Lifecycle</h2>
+        <ul>
+          <li><code>draft</code>: created but not started</li>
+          <li><code>running</code>: replay is in progress</li>
+          <li><code>completed</code>: replay or dry-run finished successfully</li>
+          <li><code>failed</code>: replay exited with an error</li>
+          <li><code>cancelled</code>: draft job was cancelled before start</li>
+        </ul>
+
+        <h2>Commands</h2>
+        <pre><code>npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 10 --end 25 --job-id incident-2026-04-28
+npm run replay:jobs -- start --job-id incident-2026-04-28
+npm run replay:jobs -- list
+npm run replay:jobs -- show --job-id incident-2026-04-28
+npm run replay:jobs -- cancel --job-id draft-preview</code></pre>
+
+        <h2>Dry-Run Jobs</h2>
+        <p>
+          A dry-run job uses the same persisted workflow. It reads and previews
+          the requested records but does not connect a producer or write to the
+          destination topic.
+        </p>
+
+        <h2>What the Job Record Stores</h2>
+        <ul>
+          <li>job id</li>
+          <li>source topic and destination topic</li>
+          <li>partition, start offset, and end offset</li>
+          <li>status</li>
+          <li>dry-run flag</li>
+          <li>replayed count and total message count</li>
+          <li>created, started, and completed timestamps</li>
+          <li>error message and last replayed offset</li>
+        </ul>
+
+        <div class="callout">
+          Running job cancellation is not implemented yet. That belongs to the
+          later operational-controls phase, where cancellation and throttling
+          become first-class controls.
+        </div>
+
+        <p class="footer">
+          For repo-facing details, see <code>docs/REPLAY_JOBS.md</code>.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>
