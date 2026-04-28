@@ -12,7 +12,7 @@ Lighthouse now supports:
 - `GET /api/jobs/:jobId` to fetch one job
 - `GET /api/jobs/:jobId/preview` to run a dry-run preview and return structured messages
 - `POST /api/jobs/:jobId/start` to start the job in-process and return `running`
-- `POST /api/jobs/:jobId/cancel` to cancel draft or failed jobs
+- `POST /api/jobs/:jobId/cancel` to cancel draft, failed, or running jobs
 - timestamp-window job creation with resolved offsets
 - optional `messages-per-second` throttling for replay execution
 - derived progress metrics for percent complete, remaining messages, current
@@ -167,8 +167,13 @@ Current behavior:
 
 - draft jobs can be cancelled
 - failed jobs can be cancelled
-- running job cancellation is not implemented yet
+- running jobs can be cancelled cooperatively
 - completed jobs cannot be cancelled
+
+When a running job is active in the Next.js process, cancellation aborts the
+background replay worker and persists the final `cancelled` state. If another
+process started the job through the job CLI, cancellation is observed through
+the persisted job state on the next progress check.
 
 ## Status Codes
 
@@ -183,5 +188,4 @@ Current behavior:
 ## Current Limits
 
 - replay execution is in-process, not distributed
-- running-job cancellation is not implemented yet
 - there is no authentication or RBAC layer yet

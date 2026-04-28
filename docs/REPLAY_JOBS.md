@@ -16,6 +16,7 @@ Lighthouse now supports:
 - optional message-per-second throttling stored with each job
 - derived progress metrics for percent complete, current offset, throughput,
   elapsed time, and ETA
+- cooperative cancellation for running persisted jobs
 
 The replay worker still executes a deterministic offset range. Timestamp jobs
 resolve their time window before persistence, then store the resolved offsets.
@@ -76,11 +77,17 @@ npm run replay:jobs -- list
 npm run replay:jobs -- show --job-id incident-2026-04-28
 ```
 
-Cancel a draft job:
+Cancel a draft, failed, or running job:
 
 ```bash
 npm run replay:jobs -- cancel --job-id preview-2026-04-28
 ```
+
+Cancellation is cooperative. API-started jobs are aborted through the
+in-process runner. CLI-started jobs notice a persisted `cancelled` status during
+progress checks and typically stop before completion, but a cancellation
+requested after the last progress update may still allow the job to be marked
+`completed`.
 
 ## Stored Fields
 
@@ -129,7 +136,6 @@ The snapshot includes:
 The persisted workflow still keeps orchestration intentionally local and simple:
 
 - jobs are stored locally on one machine
-- running job cancellation is not implemented yet
 - the API starts replay work in the same application process
 
-Running-job cancellation remains the main concern for the rest of Phase 6.
+Distributed worker coordination remains outside the current MVP scope.

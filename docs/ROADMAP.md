@@ -14,10 +14,11 @@ Completed:
 - Phase 6 timestamp-to-offset replay
 - Phase 6 message-per-second throttling
 - Phase 6 richer progress metrics
+- Phase 6 running-job cancellation
 
 Next focus:
 
-- Phase 6 running-job cancellation
+- Phase 6.5 MVP acceptance pass
 
 ## Phase 0: Foundation
 
@@ -116,9 +117,26 @@ Goal: make replay safer in realistic debugging workflows.
 - Timestamp-to-offset replay: implemented
 - Message-per-second throttling: implemented
 - Better progress metrics: implemented
-- Job cancellation
+- Job cancellation: implemented
 
 Deliverable: controlled replay for failure windows and safer long-running jobs.
+
+## Phase 6.5: MVP Acceptance Pass
+
+Goal: prove the current MVP is useful, operational, and accurately documented
+before starting alpha release quality control.
+
+- Confirm offset replay works end to end
+- Confirm timestamp replay works end to end
+- Confirm dry-run preview never produces destination records
+- Confirm source and destination topic safety rules prevent replay loops
+- Confirm local Docker sample setup is accurate
+- Confirm external Kafka configuration docs are accurate
+- Confirm Confluent Cloud configuration docs are accurate
+- Confirm README and GitHub Pages match the actual application
+
+Deliverable: an acceptance report with any release blockers fixed or converted
+into explicit alpha issues.
 
 ## Non-Goals for the Near Term
 

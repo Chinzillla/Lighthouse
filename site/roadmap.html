@@ -44,14 +44,25 @@
           <li>Phase 6 timestamp-to-offset replay for incident windows</li>
           <li>Phase 6 message-per-second throttling for replay writes</li>
           <li>Phase 6 richer progress metrics for replay jobs</li>
+          <li>Phase 6 running-job cancellation</li>
         </ul>
 
         <h2>Next</h2>
         <ol>
-          <li>Running-job cancellation</li>
+          <li>Phase 6.5 MVP acceptance pass</li>
           <li>Replay-specific filtering and comparison</li>
           <li>Replay estimates and richer incident workflows</li>
         </ol>
+
+        <h2>Phase 6.5 Acceptance Pass</h2>
+        <ul>
+          <li>Confirm offset replay works end to end</li>
+          <li>Confirm timestamp replay works end to end</li>
+          <li>Confirm dry-run preview never produces destination records</li>
+          <li>Confirm source and destination topic safety rules prevent replay loops</li>
+          <li>Confirm local Docker sample, external Kafka, and Confluent Cloud docs are accurate</li>
+          <li>Confirm README and GitHub Pages match the actual application</li>
+        </ul>
 
         <h2>Near-Term Non-Goals</h2>
         <ul>

@@ -560,6 +560,25 @@ describe('Kafka replay CLI', () => {
     expect(sleep).toHaveBeenCalledWith(500);
   });
 
+  it('rejects replay work when the cancellation signal is already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort(new Error('Replay cancelled'));
+
+    await expect(
+      replayOffsetRange({
+        consumer: {},
+        destinationTopic: 'orders-replay',
+        endOffset: 1,
+        partition: 0,
+        producer: {},
+        replayJobId: 'job-cancelled',
+        signal: controller.signal,
+        sourceTopic: 'orders',
+        startOffset: 0,
+      })
+    ).rejects.toThrow('Replay cancelled');
+  });
+
   it('supports dry-run preview without producing replay messages', async () => {
     const logger = createLogger();
     const eventHandlers = {

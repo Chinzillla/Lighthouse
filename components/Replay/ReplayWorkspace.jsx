@@ -794,7 +794,7 @@ export default function ReplayWorkspace() {
                   onClick={handleCancelJob}
                   disabled={
                     actionState.loading ||
-                    !['draft', 'failed'].includes(selectedJob.status)
+                    !['draft', 'failed', 'running'].includes(selectedJob.status)
                   }
                   className={styles.secondaryButton}
                 >

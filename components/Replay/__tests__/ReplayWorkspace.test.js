@@ -107,6 +107,17 @@ describe('ReplayWorkspace', () => {
         return jsonResponse({ job: jobs[0] });
       }
 
+      if (url === '/api/jobs/job-ui-1/cancel' && options.method === 'POST') {
+        jobs[0] = {
+          ...jobs[0],
+          completedAt: '2026-04-28T18:02:00.000Z',
+          errorMessage: null,
+          status: 'cancelled',
+          updatedAt: '2026-04-28T18:02:00.000Z',
+        };
+        return jsonResponse({ job: jobs[0] });
+      }
+
       throw new Error(`Unhandled request in test: ${options.method || 'GET'} ${url}`);
     });
 
@@ -135,6 +146,13 @@ describe('ReplayWorkspace', () => {
     expect(screen.getAllByText('50%').length).toBeGreaterThan(0);
     expect(
       within(screen.getByText('Selected job').closest('article')).getByText('2.5/s')
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(await screen.findByText('Cancelled replay job job-ui-1.')).toBeInTheDocument();
+    expect(
+      within(screen.getByText('Selected job').closest('article')).getByText('cancelled')
     ).toBeInTheDocument();
   });
 

@@ -13,7 +13,7 @@ The replay workspace supports:
 - selecting a persisted job from the recent jobs table
 - previewing structured records before replay
 - starting replay from the selected draft
-- cancelling draft or failed jobs
+- cancelling draft, failed, or running jobs
 - polling recent job state every few seconds
 - progress bars with percent complete, current offset, observed throughput,
   elapsed time, and ETA when available
@@ -91,5 +91,4 @@ Preview results are shown in a separate output panel with:
 ## Current Limits
 
 - replay execution still runs in-process in the Next.js app
-- running-job cancellation is not implemented yet
 - there is no replay comparison or filtering UI yet
