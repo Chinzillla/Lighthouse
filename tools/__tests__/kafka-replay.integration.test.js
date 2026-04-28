@@ -361,15 +361,20 @@ describeIfKafka('Kafka replay integration', () => {
             },
           })
           .catch(rejectSource);
-        await Promise.race([
-          sourceCompletion,
-          new Promise((_, reject) =>
-            setTimeout(
-              () => reject(new Error('Timed out reading source messages')),
-              15000
-            )
-          ),
-        ]);
+        let sourceTimeoutId;
+        try {
+          await Promise.race([
+            sourceCompletion,
+            new Promise((_, reject) => {
+              sourceTimeoutId = setTimeout(
+                () => reject(new Error('Timed out reading source messages')),
+                15000
+              );
+            }),
+          ]);
+        } finally {
+          clearTimeout(sourceTimeoutId);
+        }
       } finally {
         await sourceConsumer.disconnect();
       }
