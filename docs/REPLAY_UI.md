@@ -7,6 +7,7 @@ Phase 5 adds a minimal replay-specific workflow to the Lighthouse application.
 The replay workspace supports:
 
 - entering source topic, destination topic, partition, and offset range
+- switching between offset replay and timestamp-window replay
 - saving a draft replay job through the existing API
 - selecting a persisted job from the recent jobs table
 - previewing structured records before replay
@@ -53,6 +54,15 @@ The existing top navigation now links directly to the replay section.
 5. start the replay job
 6. watch status and progress update in the recent jobs table
 
+For timestamp replay, switch the create form to `Time window` and enter ISO
+timestamps such as:
+
+- start timestamp: `2026-04-28T14:03:00.000Z`
+- end timestamp: `2026-04-28T14:08:00.000Z`
+
+The UI sends those timestamps to the API, which resolves them to offsets before
+the draft is saved.
+
 ## Interaction Model
 
 The replay UI is split into three panels:
@@ -74,4 +84,3 @@ Preview results are shown in a separate output panel with:
 - replay execution still runs in-process in the Next.js app
 - running-job cancellation is not implemented yet
 - there is no replay comparison or filtering UI yet
-- timestamp-based replay is not implemented yet

@@ -32,7 +32,7 @@
           Kafka replay workbench. The current implementation already supports a
           local sample cluster, external Kafka and Confluent Cloud connection
           settings, a Prometheus-backed dashboard, and a replay CLI with dry-run
-          preview plus replay traceability headers.
+          preview, timestamp-window replay, and replay traceability headers.
         </p>
 
         <div class="grid">
@@ -48,7 +48,7 @@
           </section>
           <section>
             <h3>Run a replay</h3>
-            <p>Copy one closed offset range into a sandbox topic.</p>
+            <p>Copy one closed offset range or resolved time window into a sandbox topic.</p>
             <pre><code>npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25</code></pre>
           </section>
         </div>
@@ -58,7 +58,7 @@
           <li>Prometheus-backed Kafka dashboard in Next.js</li>
           <li>Local three-broker Kafka sample stack in Docker Compose</li>
           <li>Kafka metrics exporter for local Kafka and Confluent Cloud</li>
-          <li>Replay CLI with offset-range replay, dry-run preview, and metadata headers</li>
+          <li>Replay CLI with offset-range and timestamp-window replay, dry-run preview, and metadata headers</li>
           <li>Replay job API for persisted replay creation, preview, and start</li>
           <li>Replay workspace in the application shell for draft creation and monitoring</li>
           <li>CI for audit, lint, unit tests, build, Docker, and Playwright</li>

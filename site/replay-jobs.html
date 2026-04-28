@@ -30,7 +30,8 @@
         <p class="lede">
           The persisted replay workflow is now backed by SQLite and exposed
           through both CLI commands and HTTP endpoints. Jobs survive process
-          restarts and track status plus replay progress over time.
+          restarts and track status plus replay progress over time. Timestamp
+          jobs resolve their window to concrete offsets before they are saved.
         </p>
 
         <h2>Default Storage</h2>
@@ -48,6 +49,7 @@
 
         <h2>Commands</h2>
         <pre><code>npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 10 --end 25 --job-id incident-2026-04-28
+npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z --job-id incident-window-2026-04-28
 npm run replay:jobs -- start --job-id incident-2026-04-28
 npm run replay:jobs -- list
 npm run replay:jobs -- show --job-id incident-2026-04-28
@@ -64,7 +66,8 @@ npm run replay:jobs -- cancel --job-id draft-preview</code></pre>
         <ul>
           <li>job id</li>
           <li>source topic and destination topic</li>
-          <li>partition, start offset, and end offset</li>
+          <li>partition, replay mode, resolved start offset, and resolved end offset</li>
+          <li>original timestamp window for timestamp jobs</li>
           <li>status</li>
           <li>dry-run flag</li>
           <li>replayed count and total message count</li>

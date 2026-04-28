@@ -49,6 +49,7 @@
         <h2>Replay Flow</h2>
         <pre><code>CLI input
   -> Kafka admin validation
+  -> Optional timestamp-to-offset resolution
   -> Source topic subscription
   -> Partition seek to start offset
   -> Per-message preview or replay
@@ -93,13 +94,13 @@
         <h2>Why the Rebuild Uses This Shape</h2>
         <ul>
           <li>It keeps production Prometheus and Kafka access behind explicit configuration.</li>
-          <li>It proves replay behavior before adding job orchestration and UI complexity.</li>
+          <li>It keeps replay execution deterministic by resolving all jobs to concrete offsets.</li>
           <li>It gives the project a stable demo story that does not depend on hosted clusters.</li>
         </ul>
 
         <p class="footer">
-          The next architectural step is the minimal replay UI over the existing
-          API and persisted job model.
+          The next architectural step is safer long-running execution with
+          throttling, cancellation, and richer progress reporting.
         </p>
       </main>
     </div>

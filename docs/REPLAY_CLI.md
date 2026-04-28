@@ -1,8 +1,8 @@
 # Replay CLI
 
 The replay CLI is the current execution surface for Lighthouse's replay engine.
-It replays one closed offset range from one source topic partition into one
-destination topic partition.
+It replays either one closed offset range or one timestamp window from a source
+topic partition into a destination topic partition.
 
 ## Current Scope
 
@@ -10,23 +10,23 @@ Implemented today:
 
 - one source topic per run
 - one partition per run
-- one closed offset range per run
+- one closed offset range or one timestamp window per run
 - one existing destination topic per run
 - dry-run preview mode
 - replay metadata headers for traceability
+- timestamp-to-offset resolution before replay
 
 Not implemented yet:
 
-- timestamp-based replay
 - key-based filtering
 - throttling
-- cancellation
-- persisted replay jobs
+- running-job cancellation
 
 ## Command Shape
 
 ```bash
 npm run replay:cli -- --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset>
+npm run replay:cli -- --source <topic> --destination <topic> --partition <id> --start-timestamp <timestamp> --end-timestamp <timestamp>
 ```
 
 Required flags:
@@ -37,6 +37,13 @@ Required flags:
 --partition <id>
 --start <offset>
 --end <offset>
+```
+
+For time-window replay, replace `--start` and `--end` with:
+
+```text
+--start-timestamp <ISO timestamp or epoch milliseconds>
+--end-timestamp <ISO timestamp or epoch milliseconds>
 ```
 
 Optional flags:
@@ -63,6 +70,13 @@ Preview the same slice without producing anything:
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --dry-run --job-id incident-2026-04-28
 ```
 
+Replay a failure window by timestamp. The start timestamp is inclusive and the
+end timestamp is exclusive:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z --job-id incident-window-2026-04-28
+```
+
 Use the shared Kafka environment variables instead of passing brokers inline:
 
 ```bash
@@ -87,6 +101,23 @@ Dry-run still validates:
 - destination topic differs from source topic
 - source and destination both contain the requested partition
 - requested offsets are within the retained range
+- requested timestamp windows resolve to at least one retained message
+
+## Timestamp Window Behavior
+
+Timestamp replay resolves the requested time window into concrete Kafka offsets
+before reading any messages.
+
+Semantics:
+
+- `--start-timestamp` is inclusive
+- `--end-timestamp` is exclusive
+- both flags accept ISO-8601 timestamps or epoch milliseconds
+- resolved offsets are validated against the retained source partition range
+- a window that resolves to no messages fails before replay starts
+
+The replay summary and persisted jobs store the resolved offsets. That keeps
+execution deterministic after the job is created.
 
 ## Replay Headers
 
@@ -114,6 +145,7 @@ The CLI currently enforces the following rules before replay begins:
 - destination partition must exist
 - start offset must be greater than or equal to the retained earliest offset
 - end offset must be lower than the source topic's next unread offset
+- timestamp windows must resolve to a non-empty offset range
 
 ## Verification
 

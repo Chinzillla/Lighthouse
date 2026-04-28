@@ -12,9 +12,10 @@ Lighthouse now supports:
 - replay progress updates while a job is running
 - CLI commands to create, start, list, show, and cancel jobs
 - API endpoints to create, inspect, preview, start, and cancel persisted jobs
+- timestamp-window jobs that resolve to concrete offsets at creation time
 
-The replay engine itself is still the same bounded offset-range worker from
-Phase 2. Phase 3 adds orchestration and state around it.
+The replay worker still executes a deterministic offset range. Timestamp jobs
+resolve their time window before persistence, then store the resolved offsets.
 
 ## Database Location
 
@@ -38,6 +39,12 @@ Create a draft replay job:
 
 ```bash
 npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 10 --end 25 --job-id incident-2026-04-28
+```
+
+Create a draft from a timestamp window:
+
+```bash
+npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z --job-id incident-window-2026-04-28
 ```
 
 Start the job:
@@ -74,8 +81,11 @@ Each replay job stores:
 - source topic
 - destination topic
 - partition
-- start offset
-- end offset
+- replay mode
+- resolved start offset
+- resolved end offset
+- original start timestamp for timestamp jobs
+- original end timestamp for timestamp jobs
 - status
 - dry-run flag
 - replayed count
@@ -93,6 +103,5 @@ The persisted workflow still keeps orchestration intentionally local and simple:
 - jobs are stored locally on one machine
 - running job cancellation is not implemented yet
 - the API starts replay work in the same application process
-- there is no replay-specific UI yet
 
-Those remain the main concerns for Phase 5 and Phase 6.
+Those remain the main concerns for the rest of Phase 6.
