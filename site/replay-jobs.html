@@ -33,7 +33,8 @@
           restarts and track status plus replay progress over time. Timestamp
           jobs resolve their window to concrete offsets before they are saved,
           jobs can store an optional messages-per-second cap, and job reads
-          include derived progress metrics.
+          include derived progress metrics. Running jobs can be cancelled
+          cooperatively through the API or job CLI.
         </p>
 
         <h2>Default Storage</h2>
@@ -46,7 +47,7 @@
           <li><code>running</code>: replay is in progress</li>
           <li><code>completed</code>: replay or dry-run finished successfully</li>
           <li><code>failed</code>: replay exited with an error</li>
-          <li><code>cancelled</code>: draft job was cancelled before start</li>
+          <li><code>cancelled</code>: job was cancelled before completion</li>
         </ul>
 
         <h2>Commands</h2>
@@ -56,7 +57,7 @@ npm run replay:jobs -- create --source orders --destination orders-replay --part
 npm run replay:jobs -- start --job-id incident-2026-04-28
 npm run replay:jobs -- list
 npm run replay:jobs -- show --job-id incident-2026-04-28
-npm run replay:jobs -- cancel --job-id draft-preview</code></pre>
+npm run replay:jobs -- cancel --job-id incident-2026-04-28</code></pre>
 
         <h2>Dry-Run Jobs</h2>
         <p>
@@ -81,8 +82,9 @@ npm run replay:jobs -- cancel --job-id draft-preview</code></pre>
         </ul>
 
         <div class="callout">
-          Running job cancellation is not implemented yet. That belongs to the
-          later operational-controls phase.
+          Cancellation is cooperative. API-started jobs are aborted in-process;
+          CLI-started jobs stop after the running process observes the
+          persisted cancelled state.
         </div>
 
         <p class="footer">

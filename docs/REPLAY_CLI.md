@@ -16,11 +16,11 @@ Implemented today:
 - replay metadata headers for traceability
 - timestamp-to-offset resolution before replay
 - optional message-per-second throttling for actual replay writes
+- persisted replay jobs can be cancelled while running
 
 Not implemented yet:
 
 - key-based filtering
-- running-job cancellation
 
 ## Command Shape
 

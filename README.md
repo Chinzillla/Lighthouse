@@ -23,7 +23,8 @@ Implemented today:
 - Dry-run replay preview and replay metadata headers for traceability
 - Replay job workflow with SQLite persistence, status tracking, and progress metrics
 - Replay job REST API for creation, listing, preview, start, cancel, and status reads
-- Minimal replay workspace in the Next.js UI for draft creation, preview, start, and monitoring
+- Running replay job cancellation for persisted jobs
+- Minimal replay workspace in the Next.js UI for draft creation, preview, start, cancel, and monitoring
 - Static GitHub Pages documentation site source in `site/`
 - Jest component tests
 - GitHub Actions workflow for dependency audit, lint, tests, build, and Docker checks
@@ -31,7 +32,7 @@ Implemented today:
 
 Planned next:
 
-- Operational controls such as running-job cancellation
+- MVP verification, quality control, and alpha release hardening
 
 ## Architecture
 
@@ -334,7 +335,7 @@ The replay workspace supports:
 - saving a persisted draft replay job
 - selecting a recent job from the monitor table
 - previewing structured messages and replay headers
-- starting or cancelling draft jobs
+- starting or cancelling draft, failed, or running jobs
 - polling recent job state and progress metrics from the API
 
 Recommended demo flow:

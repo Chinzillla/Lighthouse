@@ -14,10 +14,11 @@ Completed:
 - Phase 6 timestamp-to-offset replay
 - Phase 6 message-per-second throttling
 - Phase 6 richer progress metrics
+- Phase 6 running-job cancellation
 
 Next focus:
 
-- Phase 6 running-job cancellation
+- MVP verification and alpha release quality control
 
 ## Phase 0: Foundation
 
@@ -116,7 +117,7 @@ Goal: make replay safer in realistic debugging workflows.
 - Timestamp-to-offset replay: implemented
 - Message-per-second throttling: implemented
 - Better progress metrics: implemented
-- Job cancellation
+- Job cancellation: implemented
 
 Deliverable: controlled replay for failure windows and safer long-running jobs.
 

@@ -30,8 +30,8 @@
         <p class="lede">
           Phase 4 adds a backend contract for replay creation, preview, start,
           cancellation, and status reads. The API uses the same SQLite job store
-          and replay engine as the CLI, including timestamp-window job creation
-          replay throttling, and derived progress metrics.
+          and replay engine as the CLI, including timestamp-window job creation,
+          replay throttling, derived progress metrics, and running-job cancellation.
         </p>
 
         <h2>Endpoints</h2>
@@ -76,6 +76,14 @@ curl http://localhost:3000/api/jobs/incident-2026-04-28</code></pre>
           SQLite and can be polled by job id.
         </p>
 
+        <h2>Cancel</h2>
+        <pre><code>curl -X POST http://localhost:3000/api/jobs/incident-2026-04-28/cancel</code></pre>
+        <p>
+          Draft, failed, and running jobs can be cancelled. API-started running
+          jobs are aborted through the in-process replay runner; CLI-started
+          jobs observe the persisted cancelled state during progress checks.
+        </p>
+
         <h2>Progress Object</h2>
         <p>
           Job reads include a derived <code>progress</code> object with replayed
@@ -94,11 +102,6 @@ curl http://localhost:3000/api/jobs/incident-2026-04-28</code></pre>
           <li><code>409</code> for invalid state transitions</li>
           <li><code>502</code> for Kafka-side replay failures surfaced through the API</li>
         </ul>
-
-        <div class="callout">
-          Running-job cancellation is not implemented yet. That will land with
-          the later operational-controls phase.
-        </div>
 
         <p class="footer">
           For repo-facing details, see <code>docs/REPLAY_API.md</code>.
