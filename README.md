@@ -62,7 +62,7 @@ HTTP client
 
 The repo also includes a static docs site in `site/` for GitHub Pages
 deployment. It covers getting started, replay usage, architecture, and
-operations.
+operations, and MVP acceptance evidence.
 
 ## Quick Start
 
