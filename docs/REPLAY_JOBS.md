@@ -14,6 +14,8 @@ Lighthouse now supports:
 - API endpoints to create, inspect, preview, start, and cancel persisted jobs
 - timestamp-window jobs that resolve to concrete offsets at creation time
 - optional message-per-second throttling stored with each job
+- derived progress metrics for percent complete, current offset, throughput,
+  elapsed time, and ETA
 
 The replay worker still executes a deterministic offset range. Timestamp jobs
 resolve their time window before persistence, then store the resolved offsets.
@@ -98,11 +100,29 @@ Each replay job stores:
 - optional messages-per-second cap
 - replayed count
 - total message count for the requested range
+- derived progress snapshot returned by the API and UI
 - created time
 - started time
 - completed time
 - error message
 - last replayed offset
+
+## Progress Snapshot
+
+The store returns a `progress` object with every job read. It is derived from
+the persisted counters and timestamps, so existing databases do not need a
+migration.
+
+The snapshot includes:
+
+- replayed count
+- total count
+- remaining count
+- percent complete
+- current offset
+- elapsed milliseconds
+- average messages per second
+- estimated remaining milliseconds for running jobs
 
 ## Current Limits
 
@@ -112,4 +132,4 @@ The persisted workflow still keeps orchestration intentionally local and simple:
 - running job cancellation is not implemented yet
 - the API starts replay work in the same application process
 
-Those remain the main concerns for the rest of Phase 6.
+Running-job cancellation remains the main concern for the rest of Phase 6.

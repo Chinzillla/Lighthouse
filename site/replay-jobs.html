@@ -32,7 +32,8 @@
           through both CLI commands and HTTP endpoints. Jobs survive process
           restarts and track status plus replay progress over time. Timestamp
           jobs resolve their window to concrete offsets before they are saved,
-          and jobs can store an optional messages-per-second cap.
+          jobs can store an optional messages-per-second cap, and job reads
+          include derived progress metrics.
         </p>
 
         <h2>Default Storage</h2>
@@ -74,6 +75,7 @@ npm run replay:jobs -- cancel --job-id draft-preview</code></pre>
           <li>dry-run flag</li>
           <li>optional messages-per-second cap</li>
           <li>replayed count and total message count</li>
+          <li>derived progress snapshot with percent, throughput, elapsed time, and ETA</li>
           <li>created, started, and completed timestamps</li>
           <li>error message and last replayed offset</li>
         </ul>

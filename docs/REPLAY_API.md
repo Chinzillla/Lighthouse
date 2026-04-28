@@ -15,6 +15,8 @@ Lighthouse now supports:
 - `POST /api/jobs/:jobId/cancel` to cancel draft or failed jobs
 - timestamp-window job creation with resolved offsets
 - optional `messages-per-second` throttling for replay execution
+- derived progress metrics for percent complete, remaining messages, current
+  offset, elapsed time, throughput, and ETA
 
 The API is built on the same replay engine and SQLite job store used by the CLI.
 Validation, safety rules, and job status transitions are shared.
@@ -65,7 +67,17 @@ Response:
     "partition": 0,
     "startOffset": 10,
     "endOffset": 25,
-    "messagesPerSecond": 10
+    "messagesPerSecond": 10,
+    "progress": {
+      "replayedCount": 0,
+      "totalCount": 16,
+      "remainingCount": 16,
+      "percent": 0,
+      "currentOffset": null,
+      "elapsedMs": null,
+      "averageMessagesPerSecond": null,
+      "estimatedRemainingMs": null
+    }
   }
 }
 ```
@@ -108,6 +120,23 @@ curl http://localhost:3000/api/jobs/incident-2026-04-28
 ```
 
 `GET /api/jobs` accepts an optional `limit` query parameter.
+
+## Job Progress
+
+Every job response includes the persisted counters and a derived `progress`
+object:
+
+- `replayedCount`: messages replayed so far
+- `totalCount`: total messages in the resolved range
+- `remainingCount`: messages not replayed yet
+- `percent`: completion percentage capped at `100`
+- `currentOffset`: last replayed source offset, or `null`
+- `elapsedMs`: elapsed runtime from start to latest update or completion
+- `averageMessagesPerSecond`: observed replay throughput
+- `estimatedRemainingMs`: ETA for running jobs when throughput is known
+
+The API derives those values from SQLite state on read. No migration is
+required for existing local databases.
 
 ## Preview a Job
 

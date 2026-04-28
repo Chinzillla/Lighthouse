@@ -13,10 +13,11 @@ Completed:
 - Phase 5 minimal replay UI
 - Phase 6 timestamp-to-offset replay
 - Phase 6 message-per-second throttling
+- Phase 6 richer progress metrics
 
 Next focus:
 
-- Phase 6 richer progress metrics and running-job cancellation
+- Phase 6 running-job cancellation
 
 ## Phase 0: Foundation
 
@@ -114,8 +115,8 @@ Goal: make replay safer in realistic debugging workflows.
 
 - Timestamp-to-offset replay: implemented
 - Message-per-second throttling: implemented
+- Better progress metrics: implemented
 - Job cancellation
-- Better progress metrics
 
 Deliverable: controlled replay for failure windows and safer long-running jobs.
 
