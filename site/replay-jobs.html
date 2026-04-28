@@ -16,6 +16,7 @@
           <a href="./getting-started.html">Getting Started</a>
           <a href="./replay-cli.html">Replay CLI</a>
           <a class="active" href="./replay-jobs.html">Replay Jobs</a>
+          <a href="./replay-api.html">Replay API</a>
           <a href="./architecture.html">Architecture</a>
           <a href="./operations.html">Operations</a>
           <a href="./roadmap.html">Roadmap</a>
@@ -26,9 +27,9 @@
         <p class="eyebrow">Replay Jobs</p>
         <h1>Persist replay work as local jobs instead of one-off terminal commands.</h1>
         <p class="lede">
-          Phase 3 adds a SQLite-backed job workflow. Jobs are stored locally,
-          survive process restarts, and track status plus replay progress over
-          time.
+          The persisted replay workflow is now backed by SQLite and exposed
+          through both CLI commands and HTTP endpoints. Jobs survive process
+          restarts and track status plus replay progress over time.
         </p>
 
         <h2>Default Storage</h2>
@@ -77,7 +78,8 @@ npm run replay:jobs -- cancel --job-id draft-preview</code></pre>
         </div>
 
         <p class="footer">
-          For repo-facing details, see <code>docs/REPLAY_JOBS.md</code>.
+          For repo-facing details, see <code>docs/REPLAY_JOBS.md</code> and
+          <code>docs/REPLAY_API.md</code>.
         </p>
       </main>
     </div>

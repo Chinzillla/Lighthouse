@@ -21,6 +21,7 @@ Implemented today:
 - Offset-range Kafka replay CLI for one topic partition and one closed offset range
 - Dry-run replay preview and replay metadata headers for traceability
 - Replay job workflow with SQLite persistence and job status tracking
+- Replay job REST API for creation, listing, preview, start, cancel, and status reads
 - Static GitHub Pages documentation site source in `site/`
 - Jest component tests
 - GitHub Actions workflow for dependency audit, lint, tests, build, and Docker checks
@@ -28,7 +29,6 @@ Implemented today:
 
 Planned next:
 
-- REST API for replay job creation, status, preview, and cancellation
 - Minimal UI for replay creation and job monitoring
 
 ## Architecture
@@ -43,6 +43,19 @@ Browser
 
 The frontend never calls Prometheus directly. Prometheus access stays on the
 server side through `PROMETHEUS_API`.
+
+```text
+HTTP client
+  -> /api/jobs
+  -> replay job service
+  -> SQLite job store
+
+HTTP client
+  -> /api/jobs/:id/start
+  -> in-process replay runner
+  -> Kafka replay engine
+  -> Kafka source and destination topics
+```
 
 The repo also includes a static docs site in `site/` for GitHub Pages
 deployment. It covers getting started, replay usage, architecture, and
@@ -229,6 +242,49 @@ npm run replay:jobs -- show --job-id incident-2026-04-28
 By default, the job store lives at `data/lighthouse.sqlite`. Override it with
 `LIGHTHOUSE_DB_PATH` when you need a different location.
 
+## Replay API
+
+Phase 4 exposes the replay workflow through Next.js API routes.
+
+Endpoints:
+
+- `POST /api/jobs`
+- `GET /api/jobs`
+- `GET /api/jobs/:jobId`
+- `GET /api/jobs/:jobId/preview`
+- `POST /api/jobs/:jobId/start`
+- `POST /api/jobs/:jobId/cancel`
+
+Create a job:
+
+```bash
+curl -X POST http://localhost:3000/api/jobs \
+  -H "content-type: application/json" \
+  -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"10","end":"25","job-id":"incident-2026-04-28"}'
+```
+
+Preview it without producing:
+
+```bash
+curl http://localhost:3000/api/jobs/incident-2026-04-28/preview
+```
+
+Start it:
+
+```bash
+curl -X POST http://localhost:3000/api/jobs/incident-2026-04-28/start
+```
+
+List persisted jobs:
+
+```bash
+curl http://localhost:3000/api/jobs
+```
+
+The start endpoint launches the replay worker in the application process and
+returns the job in `running` state immediately. Progress and final status are
+persisted in SQLite, so the job can be polled through `GET /api/jobs/:jobId`.
+
 ## Local Development
 
 Use this when working on the Next.js app itself.
@@ -267,6 +323,7 @@ Kafka configuration guide.
 See [docs/REPLAY_CLI.md](docs/REPLAY_CLI.md) for replay semantics, dry-run
 behavior, and traceability headers.
 See [docs/REPLAY_JOBS.md](docs/REPLAY_JOBS.md) for the persisted job workflow.
+See [docs/REPLAY_API.md](docs/REPLAY_API.md) for the replay job HTTP contract.
 
 ## Quality Gates
 

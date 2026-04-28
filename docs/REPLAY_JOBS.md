@@ -11,6 +11,7 @@ Lighthouse now supports:
 - statuses for `draft`, `running`, `completed`, `failed`, and `cancelled`
 - replay progress updates while a job is running
 - CLI commands to create, start, list, show, and cancel jobs
+- API endpoints to create, inspect, preview, start, and cancel persisted jobs
 
 The replay engine itself is still the same bounded offset-range worker from
 Phase 2. Phase 3 adds orchestration and state around it.
@@ -87,11 +88,11 @@ Each replay job stores:
 
 ## Current Limits
 
-Phase 3 keeps orchestration intentionally local and simple:
+The persisted workflow still keeps orchestration intentionally local and simple:
 
 - jobs are stored locally on one machine
 - running job cancellation is not implemented yet
-- jobs are started manually through the CLI
-- there is no API or UI surface for jobs yet
+- the API starts replay work in the same application process
+- there is no replay-specific UI yet
 
-Those are the concerns for Phase 4 and Phase 6.
+Those remain the main concerns for Phase 5 and Phase 6.

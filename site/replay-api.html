@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighthouse Docs | Replay API</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1 class="brand">Lighthouse</h1>
+        <p class="tagline">Docs for the Kafka replay engine rebuild.</p>
+        <nav class="nav">
+          <a href="./index.html">Overview</a>
+          <a href="./getting-started.html">Getting Started</a>
+          <a href="./replay-cli.html">Replay CLI</a>
+          <a href="./replay-jobs.html">Replay Jobs</a>
+          <a class="active" href="./replay-api.html">Replay API</a>
+          <a href="./architecture.html">Architecture</a>
+          <a href="./operations.html">Operations</a>
+          <a href="./roadmap.html">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <p class="eyebrow">Replay API</p>
+        <h1>Drive persisted replay work over HTTP.</h1>
+        <p class="lede">
+          Phase 4 adds a backend contract for replay creation, preview, start,
+          cancellation, and status reads. The API uses the same SQLite job store
+          and replay engine as the CLI.
+        </p>
+
+        <h2>Endpoints</h2>
+        <ul>
+          <li><code>POST /api/jobs</code></li>
+          <li><code>GET /api/jobs</code></li>
+          <li><code>GET /api/jobs/:jobId</code></li>
+          <li><code>GET /api/jobs/:jobId/preview</code></li>
+          <li><code>POST /api/jobs/:jobId/start</code></li>
+          <li><code>POST /api/jobs/:jobId/cancel</code></li>
+        </ul>
+
+        <h2>Create and Preview</h2>
+        <pre><code>curl -X POST http://localhost:3000/api/jobs \
+  -H "content-type: application/json" \
+  -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"10","end":"25","job-id":"incident-2026-04-28"}'
+curl http://localhost:3000/api/jobs/incident-2026-04-28/preview</code></pre>
+
+        <h2>Start and Poll</h2>
+        <pre><code>curl -X POST http://localhost:3000/api/jobs/incident-2026-04-28/start
+curl http://localhost:3000/api/jobs/incident-2026-04-28</code></pre>
+        <p>
+          Start requests return the job in <code>running</code> state and launch
+          the replay worker in the app process. Progress is written back to
+          SQLite and can be polled by job id.
+        </p>
+
+        <h2>Status Codes</h2>
+        <ul>
+          <li><code>200</code> for reads, previews, and cancellation</li>
+          <li><code>201</code> for creation</li>
+          <li><code>202</code> for start</li>
+          <li><code>400</code> for validation errors</li>
+          <li><code>404</code> when the job id does not exist</li>
+          <li><code>409</code> for invalid state transitions</li>
+          <li><code>502</code> for Kafka-side replay failures surfaced through the API</li>
+        </ul>
+
+        <div class="callout">
+          Running-job cancellation is not implemented yet. That will land with
+          the later operational-controls phase.
+        </div>
+
+        <p class="footer">
+          For repo-facing details, see <code>docs/REPLAY_API.md</code>.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

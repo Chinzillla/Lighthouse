@@ -4,13 +4,13 @@ const {
   createMockRequest,
   createMockResponse,
   createTempReplayEnvironment,
-} = require('./api-test-helpers');
-const { createReplayJobStore, JOB_STATUSES } = require('../../../lib/replay-jobs/store');
-const jobsIndexRoute = require('../jobs/index');
-const jobDetailRoute = require('../jobs/[jobId]');
-const jobCancelRoute = require('../jobs/[jobId]/cancel');
-const jobPreviewRoute = require('../jobs/[jobId]/preview');
-const jobStartRoute = require('../jobs/[jobId]/start');
+} = require('../../test-support/api-test-helpers');
+const { createReplayJobStore, JOB_STATUSES } = require('../../lib/replay-jobs/store');
+const jobsIndexRoute = require('../../pages/api/jobs/index');
+const jobDetailRoute = require('../../pages/api/jobs/[jobId]');
+const jobCancelRoute = require('../../pages/api/jobs/[jobId]/cancel');
+const jobPreviewRoute = require('../../pages/api/jobs/[jobId]/preview');
+const jobStartRoute = require('../../pages/api/jobs/[jobId]/start');
 
 describe('Replay job API routes', () => {
   it('creates and lists replay jobs through /api/jobs', async () => {

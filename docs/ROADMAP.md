@@ -9,10 +9,11 @@ Completed:
 - Phase 1 replay CLI prototype
 - Phase 2 safety and traceability for dry-run preview and replay headers
 - Phase 3 replay jobs and local persistence
+- Phase 4 API layer
 
 Next focus:
 
-- Phase 4 API layer
+- Phase 5 minimal replay UI
 
 ## Phase 0: Foundation
 

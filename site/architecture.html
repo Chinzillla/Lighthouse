@@ -16,6 +16,7 @@
           <a href="./getting-started.html">Getting Started</a>
           <a href="./replay-cli.html">Replay CLI</a>
           <a href="./replay-jobs.html">Replay Jobs</a>
+          <a href="./replay-api.html">Replay API</a>
           <a class="active" href="./architecture.html">Architecture</a>
           <a href="./operations.html">Operations</a>
           <a href="./roadmap.html">Roadmap</a>
@@ -24,11 +25,11 @@
 
       <main class="main">
         <p class="eyebrow">Architecture</p>
-        <h1>Two current execution paths: metrics and replay.</h1>
+        <h1>Three current execution paths: metrics, replay, and replay API.</h1>
         <p class="lede">
           Lighthouse is still early in the rebuild, so the architecture is kept
           intentionally direct: a read-only metrics path for cluster visibility
-          and a CLI path for replay execution.
+          plus shared replay paths for CLI and API execution.
         </p>
 
         <h2>Dashboard Flow</h2>
@@ -62,6 +63,14 @@
   -> Progress updates written to SQLite
   -> Status moves to completed or failed</code></pre>
 
+        <h2>Replay API Flow</h2>
+        <pre><code>HTTP client
+  -> /api/jobs or /api/jobs/:id/*
+  -> Replay job service
+  -> SQLite job store
+  -> In-process replay runner for start requests
+  -> Kafka replay engine</code></pre>
+
         <h2>Local Sample Stack</h2>
         <ul>
           <li>Three Kafka brokers in KRaft mode</li>
@@ -80,8 +89,8 @@
         </ul>
 
         <p class="footer">
-          The next architectural step is a persistent replay job model with a
-          small API layer over the engine.
+          The next architectural step is the minimal replay UI over the existing
+          API and persisted job model.
         </p>
       </main>
     </div>
