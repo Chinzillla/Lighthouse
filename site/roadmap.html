@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighthouse Docs | Roadmap</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1 class="brand">Lighthouse</h1>
+        <p class="tagline">Docs for the Kafka replay engine rebuild.</p>
+        <nav class="nav">
+          <a href="./index.html">Overview</a>
+          <a href="./getting-started.html">Getting Started</a>
+          <a href="./replay-cli.html">Replay CLI</a>
+          <a href="./architecture.html">Architecture</a>
+          <a href="./operations.html">Operations</a>
+          <a class="active" href="./roadmap.html">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <p class="eyebrow">Roadmap</p>
+        <h1>Current progress and the next MVP milestones.</h1>
+        <p class="lede">
+          The rebuild is intentionally phased. Each milestone leaves the project
+          in a usable, reviewable state.
+        </p>
+
+        <h2>Completed</h2>
+        <ul>
+          <li>Foundation stabilization for dashboard, CI, Docker, and documentation</li>
+          <li>Dependency modernization onto a supported Next.js stack</li>
+          <li>Replay CLI prototype for closed offset-range replay</li>
+          <li>Phase 2 safety work: dry-run preview and replay metadata headers</li>
+        </ul>
+
+        <h2>Next</h2>
+        <ol>
+          <li>Replay job persistence with SQLite</li>
+          <li>Backend API for job creation, preview, and start</li>
+          <li>Minimal replay UI</li>
+          <li>Operational controls such as timestamp replay and throttling</li>
+        </ol>
+
+        <h2>Near-Term Non-Goals</h2>
+        <ul>
+          <li>multi-cluster replay</li>
+          <li>auth and RBAC</li>
+          <li>schema registry integration</li>
+          <li>exactly-once replay guarantees</li>
+          <li>predictive analytics and automated root cause features</li>
+        </ul>
+
+        <p class="footer">
+          The markdown version of this plan lives in <code>docs/ROADMAP.md</code>.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,5 +1,18 @@
 # Lighthouse Rebuild Roadmap
 
+## Current Status
+
+Completed:
+
+- Phase 0 foundation stabilization
+- Phase 0.5 dependency modernization
+- Phase 1 replay CLI prototype
+- Phase 2 safety and traceability for dry-run preview and replay headers
+
+Next focus:
+
+- Phase 3 replay jobs and local persistence
+
 ## Phase 0: Foundation
 
 Goal: make the existing project credible and maintainable before adding new

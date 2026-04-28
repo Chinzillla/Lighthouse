@@ -19,13 +19,14 @@ Implemented today:
 - Local Docker Kafka stack with three brokers, Prometheus, and a demo producer
 - Kafka metrics exporter that supports local Kafka and SASL/SSL clusters
 - Offset-range Kafka replay CLI for one topic partition and one closed offset range
+- Dry-run replay preview and replay metadata headers for traceability
+- Static GitHub Pages documentation site source in `site/`
 - Jest component tests
 - GitHub Actions workflow for dependency audit, lint, tests, build, and Docker checks
 - Multi-stage Dockerfile and Docker Compose support
 
 Planned next:
 
-- Dry-run preview and replay metadata headers
 - Persistent replay job model
 - REST API for replay job creation, status, preview, and cancellation
 - Minimal UI for replay creation and job monitoring
@@ -42,6 +43,10 @@ Browser
 
 The frontend never calls Prometheus directly. Prometheus access stays on the
 server side through `PROMETHEUS_API`.
+
+The repo also includes a static docs site in `site/` for GitHub Pages
+deployment. It covers getting started, replay usage, architecture, and
+operations.
 
 ## Quick Start
 
@@ -85,6 +90,12 @@ Replay a slice of Kafka history into the seeded `orders-replay` topic:
 
 ```bash
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094
+```
+
+Preview the same replay without producing:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094 --dry-run --job-id sample-preview
 ```
 
 ### Option 2: Lighthouse With Existing Kafka
@@ -162,6 +173,9 @@ Optional flags:
 ```text
 --brokers <host:port,...>
 --client-id <id>
+--job-id <id>
+--dry-run
+--progress-every <count>
 ```
 
 Examples:
@@ -177,6 +191,17 @@ exporter, so it works for:
 - the local Docker Kafka sample
 - a plain Kafka cluster
 - Confluent Cloud
+
+Replay metadata headers added during an actual replay:
+
+- `x-replayed`
+- `x-replay-job-id`
+- `x-original-topic`
+- `x-original-partition`
+- `x-original-offset`
+
+Dry-run mode validates the request and previews the records without writing to
+the destination topic.
 
 ## Local Development
 
@@ -213,6 +238,8 @@ npm.cmd run dev
 
 See [docs/KAFKA_CONFIGURATION.md](docs/KAFKA_CONFIGURATION.md) for the full
 Kafka configuration guide.
+See [docs/REPLAY_CLI.md](docs/REPLAY_CLI.md) for replay semantics, dry-run
+behavior, and traceability headers.
 
 ## Quality Gates
 
@@ -269,6 +296,7 @@ npm run docker:config
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the phased rebuild plan.
 See [docs/OPERATIONS.md](docs/OPERATIONS.md) for local run modes, health
 checks, and troubleshooting.
+See `site/` for the GitHub Pages documentation source.
 
 ## License
 

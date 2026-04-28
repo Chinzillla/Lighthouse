@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighthouse Docs | Getting Started</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1 class="brand">Lighthouse</h1>
+        <p class="tagline">Docs for the Kafka replay engine rebuild.</p>
+        <nav class="nav">
+          <a href="./index.html">Overview</a>
+          <a class="active" href="./getting-started.html">Getting Started</a>
+          <a href="./replay-cli.html">Replay CLI</a>
+          <a href="./architecture.html">Architecture</a>
+          <a href="./operations.html">Operations</a>
+          <a href="./roadmap.html">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <p class="eyebrow">Getting Started</p>
+        <h1>Pick a Kafka run mode and get to a working replay quickly.</h1>
+        <p class="lede">
+          Lighthouse supports three practical run modes: the local sample cluster,
+          an existing Kafka-compatible endpoint, and Confluent Cloud.
+        </p>
+
+        <h2>Prerequisites</h2>
+        <ul>
+          <li>Node.js 24 and npm for local development</li>
+          <li>Docker Desktop or Docker Engine for the sample stack</li>
+          <li>Prometheus access through the included sample stack or your own deployment</li>
+        </ul>
+
+        <h2>Option 1: Local Sample Stack</h2>
+        <p>
+          This is the default path for demos and development. It starts the app,
+          Prometheus, a three-broker Kafka cluster, a Kafka metrics exporter, a
+          topic initializer, and a demo producer.
+        </p>
+        <pre><code>npm run docker:sample</code></pre>
+        <p>Local endpoints:</p>
+        <ul>
+          <li>Lighthouse UI: <code>http://localhost:3000</code></li>
+          <li>Prometheus: <code>http://localhost:9090</code></li>
+          <li>Kafka metrics exporter: <code>http://localhost:9308/metrics</code></li>
+          <li>Kafka brokers: <code>localhost:19092,localhost:19093,localhost:19094</code></li>
+        </ul>
+        <p>Replay against the sample cluster:</p>
+        <pre><code>npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --brokers localhost:19092,localhost:19093,localhost:19094</code></pre>
+
+        <h2>Option 2: Existing Kafka Endpoint</h2>
+        <p>
+          Use this when you already have a reachable Kafka-compatible cluster and
+          do not need the sample brokers.
+        </p>
+        <pre><code>KAFKA_BROKERS=broker1:9092,broker2:9092
+KAFKA_SSL=false
+KAFKA_SASL_USERNAME=
+KAFKA_SASL_PASSWORD=</code></pre>
+        <pre><code>npm run docker:external</code></pre>
+        <p>
+          If Kafka is running directly on your host and the exporter is inside
+          Docker, use <code>host.docker.internal</code> instead of
+          <code>localhost</code>.
+        </p>
+
+        <h2>Option 3: Confluent Cloud</h2>
+        <p>
+          Lighthouse uses the same connection model for Confluent Cloud. Set the
+          brokers plus SASL credentials and keep TLS enabled.
+        </p>
+        <pre><code>KAFKA_BROKERS=pkc-example.us-east-1.aws.confluent.cloud:9092
+KAFKA_SSL=true
+KAFKA_SASL_MECHANISM=plain
+KAFKA_SASL_USERNAME=&lt;api-key&gt;
+KAFKA_SASL_PASSWORD=&lt;api-secret&gt;</code></pre>
+        <pre><code>npm run docker:external</code></pre>
+
+        <h2>Local App Development</h2>
+        <p>For frontend and API work, keep the sample stack running and use the Next.js dev server.</p>
+        <pre><code>npm ci
+npm run docker:sample:detached
+$env:PROMETHEUS_API="http://localhost:9090"
+$env:PROMETHEUS_ALLOWED_HOSTS="localhost:9090"
+npm.cmd run dev</code></pre>
+
+        <p class="footer">
+          Continue with <a href="./replay-cli.html">Replay CLI</a> once the stack
+          is reachable.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>
