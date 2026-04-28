@@ -212,6 +212,26 @@ function formatHeadersForPreview(headers = {}) {
   );
 }
 
+function createPreviewMessage({
+  destinationTopic,
+  message,
+  offset,
+  partition,
+  replayHeaders,
+  sourceTopic,
+}) {
+  return {
+    destinationTopic,
+    headers: formatHeadersForPreview(replayHeaders),
+    key: toHeaderString(message.key),
+    offset,
+    partition,
+    sourceTopic,
+    timestamp: message.timestamp || null,
+    value: toHeaderString(message.value),
+  };
+}
+
 function buildReplayHeaders({
   existingHeaders = {},
   offset,
@@ -230,21 +250,16 @@ function buildReplayHeaders({
 }
 
 function logDryRunPreview({
-  destinationTopic,
   logger,
-  message,
-  offset,
-  partition,
+  previewMessage,
   previewIndex,
-  replayHeaders,
-  sourceTopic,
   totalMessages,
 }) {
   logger.log(
-    `Dry run preview ${previewIndex}/${totalMessages}: ${sourceTopic}[${partition}] offset ${offset} -> ${destinationTopic}[${partition}] key="${formatPreviewText(
-      message.key
-    )}" value="${formatPreviewText(message.value)}" headers=${JSON.stringify(
-      formatHeadersForPreview(replayHeaders)
+    `Dry run preview ${previewIndex}/${totalMessages}: ${previewMessage.sourceTopic}[${previewMessage.partition}] offset ${previewMessage.offset} -> ${previewMessage.destinationTopic}[${previewMessage.partition}] key="${formatPreviewText(
+      previewMessage.key
+    )}" value="${formatPreviewText(previewMessage.value)}" headers=${JSON.stringify(
+      previewMessage.headers
     )}`
   );
 }
@@ -313,6 +328,7 @@ async function replayOffsetRange({
   producer,
   logger = console,
   onProgress = async () => {},
+  onPreviewMessage = async () => {},
   sourceTopic,
   destinationTopic,
   partition,
@@ -421,15 +437,19 @@ async function replayOffsetRange({
         });
 
         if (dryRun) {
-          logDryRunPreview({
+          const previewMessage = createPreviewMessage({
             destinationTopic,
-            logger,
             message,
             offset: currentOffset,
             partition,
-            previewIndex: replayedCount + 1,
             replayHeaders,
             sourceTopic,
+          });
+          await onPreviewMessage(previewMessage);
+          logDryRunPreview({
+            logger,
+            previewMessage,
+            previewIndex: replayedCount + 1,
             totalMessages,
           });
         } else {
@@ -506,6 +526,7 @@ async function runReplay(rawOptions, dependencies = {}) {
     kafkaFactory = createKafka,
     logger = console,
     onProgress = async () => {},
+    onPreviewMessage = async () => {},
   } = dependencies;
   const options = normalizeReplayOptions(rawOptions, env);
   validateReplayOptions(options);
@@ -539,6 +560,7 @@ async function runReplay(rawOptions, dependencies = {}) {
       endOffset: options.endOffset,
       logger,
       onProgress,
+      onPreviewMessage,
       partition: options.partition,
       producer,
       progressInterval: options.progressInterval,
@@ -610,6 +632,7 @@ module.exports = {
   DEFAULT_PROGRESS_INTERVAL,
   buildReplayHeaders,
   buildKafkaEnv,
+  createPreviewMessage,
   createReplayJobId,
   createReplayGroupId,
   findPartitionOffsets,
