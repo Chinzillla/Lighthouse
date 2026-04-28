@@ -4,17 +4,24 @@ const { createKafka, parseBrokers } = require('./kafka-config');
 const DEFAULT_CLIENT_ID = 'lighthouse-replay-cli';
 const DEFAULT_PROGRESS_INTERVAL = 25;
 const BOOLEAN_ARGS = new Set(['dry-run']);
+const REPLAY_MODES = Object.freeze({
+  OFFSET: 'offset',
+  TIMESTAMP: 'timestamp',
+});
 
 function formatUsage() {
   return [
     'Usage:',
     '  node tools/kafka-replay.js --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset> [--brokers <host:port,...>] [--client-id <id>] [--job-id <id>] [--dry-run]',
+    '  node tools/kafka-replay.js --source <topic> --destination <topic> --partition <id> --start-timestamp <timestamp> --end-timestamp <timestamp> [--brokers <host:port,...>] [--client-id <id>] [--job-id <id>] [--dry-run]',
     '',
     'Examples:',
     '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25',
+    '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z',
     '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25 --brokers localhost:19092,localhost:19093,localhost:19094',
     '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25 --dry-run',
     '',
+    'Timestamp replay uses a half-open window: start is inclusive, end is exclusive.',
     'Kafka connection settings also honor the existing KAFKA_* environment variables.',
   ].join('\n');
 }
@@ -115,17 +122,71 @@ function parseOptionalInteger(name, value, defaultValue) {
   return parseRequiredInteger(name, value);
 }
 
+function hasCliValue(value) {
+  return value !== undefined && value !== null && String(value).trim() !== '';
+}
+
+function parseRequiredTimestamp(name, value) {
+  if (!hasCliValue(value)) {
+    throw new Error(`Missing required argument "--${name}"`);
+  }
+
+  const rawValue = String(value).trim();
+  const timestampMs = /^\d+$/.test(rawValue) ? Number(rawValue) : Date.parse(rawValue);
+
+  if (!Number.isSafeInteger(timestampMs) || timestampMs < 0) {
+    throw new Error(`"--${name}" must be an ISO-8601 timestamp or epoch milliseconds`);
+  }
+
+  const date = new Date(timestampMs);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error(`"--${name}" must be an ISO-8601 timestamp or epoch milliseconds`);
+  }
+
+  return {
+    iso: date.toISOString(),
+    ms: timestampMs,
+  };
+}
+
 function createReplayJobId() {
   return `replay-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
 function normalizeReplayOptions(input, env = process.env) {
+  const usesOffsetRange = hasCliValue(input.start) || hasCliValue(input.end);
+  const usesTimestampRange =
+    hasCliValue(input['start-timestamp']) || hasCliValue(input['end-timestamp']);
+
+  if (usesOffsetRange && usesTimestampRange) {
+    throw new Error(
+      'Use either "--start"/"--end" or "--start-timestamp"/"--end-timestamp", not both'
+    );
+  }
+
+  const replayMode = usesTimestampRange ? REPLAY_MODES.TIMESTAMP : REPLAY_MODES.OFFSET;
+  const startTimestamp =
+    replayMode === REPLAY_MODES.TIMESTAMP
+      ? parseRequiredTimestamp('start-timestamp', input['start-timestamp'])
+      : null;
+  const endTimestamp =
+    replayMode === REPLAY_MODES.TIMESTAMP
+      ? parseRequiredTimestamp('end-timestamp', input['end-timestamp'])
+      : null;
+
   return {
     sourceTopic: (input.source || '').trim(),
     destinationTopic: (input.destination || '').trim(),
     partition: parseRequiredInteger('partition', input.partition),
-    startOffset: parseRequiredInteger('start', input.start),
-    endOffset: parseRequiredInteger('end', input.end),
+    startOffset:
+      replayMode === REPLAY_MODES.OFFSET ? parseRequiredInteger('start', input.start) : null,
+    endOffset:
+      replayMode === REPLAY_MODES.OFFSET ? parseRequiredInteger('end', input.end) : null,
+    replayMode,
+    startTimestamp: startTimestamp?.iso ?? null,
+    startTimestampMs: startTimestamp?.ms ?? null,
+    endTimestamp: endTimestamp?.iso ?? null,
+    endTimestampMs: endTimestamp?.ms ?? null,
     brokers: parseBrokers(input.brokers || env.KAFKA_BROKERS),
     clientId: (input['client-id'] || env.KAFKA_CLIENT_ID || DEFAULT_CLIENT_ID).trim(),
     dryRun: parseCliBoolean('dry-run', input['dry-run'], false),
@@ -139,6 +200,8 @@ function normalizeReplayOptions(input, env = process.env) {
 }
 
 function validateReplayOptions(options) {
+  const replayMode = options.replayMode || REPLAY_MODES.OFFSET;
+
   if (!options.sourceTopic) {
     throw new Error('Missing required argument "--source"');
   }
@@ -151,8 +214,15 @@ function validateReplayOptions(options) {
     throw new Error('Source and destination topics must be different');
   }
 
-  if (options.startOffset > options.endOffset) {
+  if (replayMode === REPLAY_MODES.OFFSET && options.startOffset > options.endOffset) {
     throw new Error('"--start" must be less than or equal to "--end"');
+  }
+
+  if (
+    replayMode === REPLAY_MODES.TIMESTAMP &&
+    options.startTimestampMs >= options.endTimestampMs
+  ) {
+    throw new Error('"--start-timestamp" must be before "--end-timestamp"');
   }
 
   if (!options.clientId) {
@@ -277,7 +347,51 @@ function findPartitionOffsets(partitionOffsets, partition, label) {
   };
 }
 
+function findPartitionTimestampOffset(partitionOffsets, partition, label) {
+  const match = partitionOffsets.find((entry) => entry.partition === partition);
+
+  if (!match) {
+    throw new Error(`${label} does not have partition ${partition}`);
+  }
+
+  const offset = Number(match.offset);
+  if (!Number.isInteger(offset) || offset < 0) {
+    throw new Error(`${label} returned invalid timestamp offset "${match.offset}"`);
+  }
+
+  return offset;
+}
+
+async function resolveTimestampOffsetRange(admin, options) {
+  if (typeof admin.fetchTopicOffsetsByTimestamp !== 'function') {
+    throw new Error('Kafka admin client does not support timestamp offset lookup');
+  }
+
+  const [startOffsets, endOffsets] = await Promise.all([
+    admin.fetchTopicOffsetsByTimestamp(options.sourceTopic, options.startTimestampMs),
+    admin.fetchTopicOffsetsByTimestamp(options.sourceTopic, options.endTimestampMs),
+  ]);
+
+  const startOffset = findPartitionTimestampOffset(
+    startOffsets,
+    options.partition,
+    `Source topic "${options.sourceTopic}"`
+  );
+  const endExclusiveOffset = findPartitionTimestampOffset(
+    endOffsets,
+    options.partition,
+    `Source topic "${options.sourceTopic}"`
+  );
+
+  return {
+    endExclusiveOffset,
+    endOffset: endExclusiveOffset - 1,
+    startOffset,
+  };
+}
+
 async function resolveReplayPlan(admin, options) {
+  const replayMode = options.replayMode || REPLAY_MODES.OFFSET;
   const topicNames = new Set(await admin.listTopics());
 
   if (!topicNames.has(options.sourceTopic)) {
@@ -304,23 +418,64 @@ async function resolveReplayPlan(admin, options) {
     `Destination topic "${options.destinationTopic}"`
   );
 
-  if (options.startOffset < sourcePartition.earliestOffset) {
+  const requestedRange =
+    replayMode === REPLAY_MODES.TIMESTAMP
+      ? await resolveTimestampOffsetRange(admin, options)
+      : {
+          endExclusiveOffset: options.endOffset + 1,
+          endOffset: options.endOffset,
+          startOffset: options.startOffset,
+        };
+
+  if (requestedRange.startOffset > requestedRange.endOffset) {
+    if (replayMode === REPLAY_MODES.TIMESTAMP) {
+      throw new Error(
+        `Timestamp window ${options.startTimestamp} to ${options.endTimestamp} resolved to no messages for ${options.sourceTopic}[${options.partition}]`
+      );
+    }
+
+    throw new Error('"--start" must be less than or equal to "--end"');
+  }
+
+  if (requestedRange.startOffset < sourcePartition.earliestOffset) {
     throw new Error(
-      `Start offset ${options.startOffset} is before the earliest available offset ${sourcePartition.earliestOffset} for ${options.sourceTopic}[${options.partition}]`
+      `Start offset ${requestedRange.startOffset} is before the earliest available offset ${sourcePartition.earliestOffset} for ${options.sourceTopic}[${options.partition}]`
     );
   }
 
-  if (options.endOffset >= sourcePartition.nextOffset) {
+  if (requestedRange.endOffset >= sourcePartition.nextOffset) {
     throw new Error(
-      `End offset ${options.endOffset} must be lower than the next unread offset ${sourcePartition.nextOffset} for ${options.sourceTopic}[${options.partition}]`
+      `End offset ${requestedRange.endOffset} must be lower than the next unread offset ${sourcePartition.nextOffset} for ${options.sourceTopic}[${options.partition}]`
     );
   }
 
   return {
     earliestOffset: sourcePartition.earliestOffset,
+    endExclusiveOffset: requestedRange.endExclusiveOffset,
+    endOffset: requestedRange.endOffset,
+    replayMode,
     nextOffset: sourcePartition.nextOffset,
-    totalMessages: options.endOffset - options.startOffset + 1,
+    startOffset: requestedRange.startOffset,
+    startTimestamp: options.startTimestamp,
+    endTimestamp: options.endTimestamp,
+    totalMessages: requestedRange.endOffset - requestedRange.startOffset + 1,
   };
+}
+
+async function resolveReplayPlanWithKafka(
+  options,
+  { env = process.env, kafkaFactory = createKafka } = {}
+) {
+  const kafka = kafkaFactory(buildKafkaEnv(options, env));
+  const admin = kafka.admin();
+
+  await admin.connect();
+
+  try {
+    return await resolveReplayPlan(admin, options);
+  } finally {
+    await admin.disconnect();
+  }
 }
 
 async function replayOffsetRange({
@@ -550,14 +705,14 @@ async function runReplay(rawOptions, dependencies = {}) {
     });
 
     logger.log(
-      `Validated replay plan: ${options.sourceTopic}[${options.partition}] offsets ${options.startOffset}-${options.endOffset} -> ${options.destinationTopic}[${options.partition}] (${replayPlan.totalMessages} messages, job ${options.replayJobId})`
+      `Validated replay plan: ${options.sourceTopic}[${options.partition}] offsets ${replayPlan.startOffset}-${replayPlan.endOffset} -> ${options.destinationTopic}[${options.partition}] (${replayPlan.totalMessages} messages, job ${options.replayJobId})`
     );
 
     const summary = await replayOffsetRange({
       consumer,
       destinationTopic: options.destinationTopic,
       dryRun: options.dryRun,
-      endOffset: options.endOffset,
+      endOffset: replayPlan.endOffset,
       logger,
       onProgress,
       onPreviewMessage,
@@ -566,7 +721,7 @@ async function runReplay(rawOptions, dependencies = {}) {
       progressInterval: options.progressInterval,
       replayJobId: options.replayJobId,
       sourceTopic: options.sourceTopic,
-      startOffset: options.startOffset,
+      startOffset: replayPlan.startOffset,
     });
 
     if (options.dryRun) {
@@ -584,8 +739,12 @@ async function runReplay(rawOptions, dependencies = {}) {
       clientId: options.clientId,
       dryRun: options.dryRun,
       earliestAvailableOffset: replayPlan.earliestOffset,
+      endExclusiveOffset: replayPlan.endExclusiveOffset,
+      endTimestamp: replayPlan.endTimestamp,
       nextOffset: replayPlan.nextOffset,
+      replayMode: replayPlan.replayMode,
       replayJobId: options.replayJobId,
+      startTimestamp: replayPlan.startTimestamp,
     };
   } finally {
     await Promise.allSettled([
@@ -630,6 +789,7 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_CLIENT_ID,
   DEFAULT_PROGRESS_INTERVAL,
+  REPLAY_MODES,
   buildReplayHeaders,
   buildKafkaEnv,
   createPreviewMessage,
@@ -644,8 +804,10 @@ module.exports = {
   normalizeReplayOptions,
   parseCliBoolean,
   parseCliArgs,
+  parseRequiredTimestamp,
   replayOffsetRange,
   resolveReplayPlan,
+  resolveReplayPlanWithKafka,
   runReplay,
   validateReplayOptions,
 };

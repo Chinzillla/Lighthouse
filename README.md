@@ -18,7 +18,7 @@ Implemented today:
 - Responsive operations console for broker, partition, topic, and offset signals
 - Local Docker Kafka stack with three brokers, Prometheus, and a demo producer
 - Kafka metrics exporter that supports local Kafka and SASL/SSL clusters
-- Offset-range Kafka replay CLI for one topic partition and one closed offset range
+- Offset-range and timestamp-window Kafka replay for one topic partition
 - Dry-run replay preview and replay metadata headers for traceability
 - Replay job workflow with SQLite persistence and job status tracking
 - Replay job REST API for creation, listing, preview, start, cancel, and status reads
@@ -30,7 +30,7 @@ Implemented today:
 
 Planned next:
 
-- Operational controls such as timestamp replay, throttling, and running-job cancellation
+- Operational controls such as throttling, richer progress metrics, and running-job cancellation
 
 ## Architecture
 
@@ -163,12 +163,12 @@ Do not commit real Confluent credentials. `.env` is ignored by git.
 
 ## Replay CLI
 
-The Phase 1 replay engine is a focused CLI for deterministic offset-range replay.
+The replay engine is a focused tool for deterministic offset-range replay.
 Version 1 intentionally supports:
 
 - one source topic at a time
 - one source partition at a time
-- one closed offset range per run
+- one closed offset range or one timestamp window per run
 - replay into an existing destination topic
 - preserving key, value, headers, timestamp, and partition number
 
@@ -180,6 +180,13 @@ Required flags:
 --partition <id>
 --start <offset>
 --end <offset>
+```
+
+For timestamp-window replay, use these flags instead of `--start` and `--end`:
+
+```text
+--start-timestamp <ISO timestamp or epoch milliseconds>
+--end-timestamp <ISO timestamp or epoch milliseconds>
 ```
 
 Optional flags:
@@ -197,6 +204,7 @@ Examples:
 ```bash
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --brokers localhost:19092,localhost:19093,localhost:19094
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z
 ```
 
 The second form uses the same `KAFKA_*` environment variables as the metrics
@@ -217,6 +225,9 @@ Replay metadata headers added during an actual replay:
 Dry-run mode validates the request and previews the records without writing to
 the destination topic.
 
+Timestamp windows use inclusive start and exclusive end semantics. Lighthouse
+resolves the window to concrete offsets before replay starts.
+
 ## Replay Jobs
 
 Phase 3 adds a job workflow backed by local SQLite persistence.
@@ -225,6 +236,12 @@ Create a draft job:
 
 ```bash
 npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 10 --end 25 --job-id incident-2026-04-28
+```
+
+Create a draft job from a timestamp window:
+
+```bash
+npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z --job-id incident-window-2026-04-28
 ```
 
 Start it:
@@ -264,6 +281,9 @@ curl -X POST http://localhost:3000/api/jobs \
   -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"10","end":"25","job-id":"incident-2026-04-28"}'
 ```
 
+Timestamp job creation uses `start-timestamp` and `end-timestamp` in the JSON
+body and stores the resolved offsets on the job.
+
 Preview it without producing:
 
 ```bash
@@ -294,6 +314,7 @@ operations console.
 The replay workspace supports:
 
 - entering source topic, destination topic, partition, and offset range
+- switching to timestamp-window replay when the incident window is known by time
 - saving a persisted draft replay job
 - selecting a recent job from the monitor table
 - previewing structured messages and replay headers

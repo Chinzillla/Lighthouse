@@ -11,10 +11,11 @@ Completed:
 - Phase 3 replay jobs and local persistence
 - Phase 4 API layer
 - Phase 5 minimal replay UI
+- Phase 6 timestamp-to-offset replay
 
 Next focus:
 
-- Phase 6 operational controls
+- Phase 6 throttling, richer progress metrics, and running-job cancellation
 
 ## Phase 0: Foundation
 
@@ -110,12 +111,12 @@ Deliverable: one focused screen for replay setup and monitoring.
 
 Goal: make replay safer in realistic debugging workflows.
 
-- Timestamp-to-offset replay
+- Timestamp-to-offset replay: implemented
 - Message-per-second throttling
 - Job cancellation
 - Better progress metrics
 
-Deliverable: controlled replay for failure windows instead of only known offsets.
+Deliverable: controlled replay for failure windows and safer long-running jobs.
 
 ## Non-Goals for the Near Term
 

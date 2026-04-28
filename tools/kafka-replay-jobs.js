@@ -12,6 +12,7 @@ function formatJobsUsage() {
   return [
     'Usage:',
     '  node tools/kafka-replay-jobs.js create --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset> [--dry-run] [--job-id <id>]',
+    '  node tools/kafka-replay-jobs.js create --source <topic> --destination <topic> --partition <id> --start-timestamp <timestamp> --end-timestamp <timestamp> [--dry-run] [--job-id <id>]',
     '  node tools/kafka-replay-jobs.js start --job-id <id>',
     '  node tools/kafka-replay-jobs.js list [--limit <count>]',
     '  node tools/kafka-replay-jobs.js show --job-id <id>',
@@ -67,7 +68,7 @@ async function main(argv = process.argv.slice(2)) {
   try {
     if (command === 'create') {
       const parsedArgs = parseCliArgs(commandArgs);
-      const job = createReplayJob(parsedArgs, { store });
+      const job = await createReplayJob(parsedArgs, { store });
       console.log(`Created replay job ${job.jobId} in status ${job.status}`);
       printJob(job);
       return job;

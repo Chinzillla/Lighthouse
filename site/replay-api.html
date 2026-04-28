@@ -30,7 +30,7 @@
         <p class="lede">
           Phase 4 adds a backend contract for replay creation, preview, start,
           cancellation, and status reads. The API uses the same SQLite job store
-          and replay engine as the CLI.
+          and replay engine as the CLI, including timestamp-window job creation.
         </p>
 
         <h2>Endpoints</h2>
@@ -48,6 +48,16 @@
   -H "content-type: application/json" \
   -d '{"source":"orders","destination":"orders-replay","partition":"0","start":"10","end":"25","job-id":"incident-2026-04-28"}'
 curl http://localhost:3000/api/jobs/incident-2026-04-28/preview</code></pre>
+
+        <h2>Create From Time Window</h2>
+        <pre><code>curl -X POST http://localhost:3000/api/jobs \
+  -H "content-type: application/json" \
+  -d '{"source":"orders","destination":"orders-replay","partition":"0","start-timestamp":"2026-04-28T14:03:00.000Z","end-timestamp":"2026-04-28T14:08:00.000Z","job-id":"incident-window-2026-04-28"}'</code></pre>
+        <p>
+          Timestamp job creation resolves the window to concrete offsets before
+          the draft is stored. The start timestamp is inclusive and the end
+          timestamp is exclusive.
+        </p>
 
         <h2>Start and Poll</h2>
         <pre><code>curl -X POST http://localhost:3000/api/jobs/incident-2026-04-28/start

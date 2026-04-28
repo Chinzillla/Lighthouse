@@ -15,10 +15,13 @@ const {
 const INITIAL_FORM = {
   destination: 'orders-replay',
   end: '5',
+  endTimestamp: '',
   jobId: '',
+  mode: 'offset',
   partition: '0',
   source: 'orders',
   start: '0',
+  startTimestamp: '',
 };
 
 const EMPTY_PREVIEW = {
@@ -35,6 +38,24 @@ function formatJobSource(job) {
 
 function formatJobTarget(job) {
   return `${job.destinationTopic}[${job.partition}]`;
+}
+
+function formatReplayMode(job) {
+  return job.replayMode === 'timestamp' ? 'Time window' : 'Offset range';
+}
+
+function formatJobRange(job) {
+  return `${job.startOffset}-${job.endOffset}`;
+}
+
+function formatTimestampWindow(job) {
+  if (job.replayMode !== 'timestamp') {
+    return null;
+  }
+
+  return `${new Date(job.startTimestamp).toLocaleString()} to ${new Date(
+    job.endTimestamp
+  ).toLocaleString()}`;
 }
 
 function formatUpdatedAt(value) {
@@ -142,6 +163,7 @@ function ReplayJobsTable({ jobs, loading, onSelectJob, selectedJobId }) {
             <th>Job</th>
             <th>Source</th>
             <th>Target</th>
+            <th>Mode</th>
             <th>Status</th>
             <th>Progress</th>
             <th>Updated</th>
@@ -163,11 +185,13 @@ function ReplayJobsTable({ jobs, loading, onSelectJob, selectedJobId }) {
                     onClick={() => onSelectJob(job.jobId)}
                   >
                     <span>{job.jobId}</span>
+                    <small>{formatJobRange(job)}</small>
                     {job.dryRun ? <small>Dry run</small> : null}
                   </button>
                 </td>
                 <td>{formatJobSource(job)}</td>
                 <td>{formatJobTarget(job)}</td>
+                <td>{formatReplayMode(job)}</td>
                 <td>
                   <span className={styles.statusPill} data-status={job.status}>
                     {job.status}
@@ -444,6 +468,29 @@ export default function ReplayWorkspace() {
           </div>
 
           <form className={styles.form} onSubmit={handleCreateDraft}>
+            <div className={styles.modeField}>
+              <span>Replay mode</span>
+              <div className={styles.modeControl} role="group" aria-label="Replay mode">
+                <button
+                  type="button"
+                  className={formState.mode === 'offset' ? styles.modeButtonActive : undefined}
+                  aria-pressed={formState.mode === 'offset'}
+                  onClick={() => updateFormField('mode', 'offset')}
+                >
+                  Offsets
+                </button>
+                <button
+                  type="button"
+                  className={
+                    formState.mode === 'timestamp' ? styles.modeButtonActive : undefined
+                  }
+                  aria-pressed={formState.mode === 'timestamp'}
+                  onClick={() => updateFormField('mode', 'timestamp')}
+                >
+                  Time window
+                </button>
+              </div>
+            </div>
             <label>
               <span>Source topic</span>
               <input
@@ -469,24 +516,51 @@ export default function ReplayWorkspace() {
                 onChange={(event) => updateFormField('partition', event.target.value)}
               />
             </label>
-            <label>
-              <span>Start offset</span>
-              <input
-                name="start"
-                inputMode="numeric"
-                value={formState.start}
-                onChange={(event) => updateFormField('start', event.target.value)}
-              />
-            </label>
-            <label>
-              <span>End offset</span>
-              <input
-                name="end"
-                inputMode="numeric"
-                value={formState.end}
-                onChange={(event) => updateFormField('end', event.target.value)}
-              />
-            </label>
+            {formState.mode === 'timestamp' ? (
+              <>
+                <label>
+                  <span>Start timestamp</span>
+                  <input
+                    name="startTimestamp"
+                    placeholder="2026-04-28T14:03:00.000Z"
+                    value={formState.startTimestamp}
+                    onChange={(event) =>
+                      updateFormField('startTimestamp', event.target.value)
+                    }
+                  />
+                </label>
+                <label>
+                  <span>End timestamp</span>
+                  <input
+                    name="endTimestamp"
+                    placeholder="2026-04-28T14:08:00.000Z"
+                    value={formState.endTimestamp}
+                    onChange={(event) => updateFormField('endTimestamp', event.target.value)}
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <label>
+                  <span>Start offset</span>
+                  <input
+                    name="start"
+                    inputMode="numeric"
+                    value={formState.start}
+                    onChange={(event) => updateFormField('start', event.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>End offset</span>
+                  <input
+                    name="end"
+                    inputMode="numeric"
+                    value={formState.end}
+                    onChange={(event) => updateFormField('end', event.target.value)}
+                  />
+                </label>
+              </>
+            )}
             <label>
               <span>Job ID (optional)</span>
               <input
@@ -527,6 +601,20 @@ export default function ReplayWorkspace() {
                   <dt>Target</dt>
                   <dd>{formatJobTarget(selectedJob)}</dd>
                 </div>
+                <div>
+                  <dt>Mode</dt>
+                  <dd>{formatReplayMode(selectedJob)}</dd>
+                </div>
+                <div>
+                  <dt>Offsets</dt>
+                  <dd>{formatJobRange(selectedJob)}</dd>
+                </div>
+                {formatTimestampWindow(selectedJob) ? (
+                  <div>
+                    <dt>Window</dt>
+                    <dd>{formatTimestampWindow(selectedJob)}</dd>
+                  </div>
+                ) : null}
                 <div>
                   <dt>Status</dt>
                   <dd>

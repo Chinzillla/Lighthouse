@@ -13,6 +13,7 @@ Lighthouse now supports:
 - `GET /api/jobs/:jobId/preview` to run a dry-run preview and return structured messages
 - `POST /api/jobs/:jobId/start` to start the job in-process and return `running`
 - `POST /api/jobs/:jobId/cancel` to cancel draft or failed jobs
+- timestamp-window job creation with resolved offsets
 
 The API is built on the same replay engine and SQLite job store used by the CLI.
 Validation, safety rules, and job status transitions are shared.
@@ -66,6 +67,18 @@ Response:
   }
 }
 ```
+
+Create a timestamp-window job:
+
+```bash
+curl -X POST http://localhost:3000/api/jobs \
+  -H "content-type: application/json" \
+  -d '{"source":"orders","destination":"orders-replay","partition":"0","start-timestamp":"2026-04-28T14:03:00.000Z","end-timestamp":"2026-04-28T14:08:00.000Z","job-id":"incident-window-2026-04-28"}'
+```
+
+Timestamp windows use inclusive start and exclusive end semantics. Job creation
+resolves the time window to concrete source offsets before the draft is saved.
+If the window has no retained messages, the API returns a validation error.
 
 ## List and Read Jobs
 
@@ -122,5 +135,4 @@ Current behavior:
 
 - replay execution is in-process, not distributed
 - running-job cancellation is not implemented yet
-- there is no replay-specific UI yet
 - there is no authentication or RBAC layer yet

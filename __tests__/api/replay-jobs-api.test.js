@@ -65,6 +65,51 @@ describe('Replay job API routes', () => {
     }
   });
 
+  it('creates timestamp replay jobs through /api/jobs with resolved offsets', async () => {
+    const { cleanup, env } = createTempReplayEnvironment();
+
+    try {
+      const handler = jobsIndexRoute.createHandler({
+        env,
+        now: () => '2026-04-28T17:05:00.000Z',
+        replayPlanResolver: jest.fn().mockResolvedValue({
+          endOffset: 34,
+          startOffset: 30,
+          totalMessages: 5,
+        }),
+      });
+      const createResponse = createMockResponse();
+
+      await handler(
+        createMockRequest({
+          body: {
+            destination: 'orders-replay',
+            'end-timestamp': '2026-04-28T14:08:00.000Z',
+            'job-id': 'job-api-time',
+            partition: '0',
+            source: 'orders',
+            'start-timestamp': '2026-04-28T14:03:00.000Z',
+          },
+          method: 'POST',
+        }),
+        createResponse
+      );
+
+      expect(createResponse.statusCode).toBe(201);
+      expect(createResponse.body.job).toMatchObject({
+        endOffset: 34,
+        endTimestamp: '2026-04-28T14:08:00.000Z',
+        jobId: 'job-api-time',
+        progressTotal: 5,
+        replayMode: 'timestamp',
+        startOffset: 30,
+        startTimestamp: '2026-04-28T14:03:00.000Z',
+      });
+    } finally {
+      cleanup();
+    }
+  });
+
   it('returns validation errors for invalid /api/jobs requests', async () => {
     const { cleanup, env } = createTempReplayEnvironment();
 

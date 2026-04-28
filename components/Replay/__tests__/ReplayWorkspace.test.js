@@ -112,6 +112,70 @@ describe('ReplayWorkspace', () => {
     ).toBeInTheDocument();
   });
 
+  it('creates timestamp replay drafts from the time-window mode', async () => {
+    let createPayload = null;
+
+    fetch.mockImplementation((url, options = {}) => {
+      if (url === '/api/jobs?limit=12') {
+        return jsonResponse({ jobs: [] });
+      }
+
+      if (url === '/api/jobs' && options.method === 'POST') {
+        createPayload = JSON.parse(options.body);
+
+        return jsonResponse({
+          job: {
+            completedAt: null,
+            createdAt: '2026-04-28T18:10:00.000Z',
+            destinationTopic: 'orders-replay',
+            dryRun: false,
+            endOffset: 14,
+            endTimestamp: '2026-04-28T14:08:00.000Z',
+            errorMessage: null,
+            jobId: 'job-ui-time',
+            lastReplayedOffset: null,
+            partition: 0,
+            progressInterval: 25,
+            progressTotal: 5,
+            replayMode: 'timestamp',
+            replayedCount: 0,
+            sourceTopic: 'orders',
+            startedAt: null,
+            startOffset: 10,
+            startTimestamp: '2026-04-28T14:03:00.000Z',
+            status: 'draft',
+            updatedAt: '2026-04-28T18:10:00.000Z',
+          },
+        });
+      }
+
+      throw new Error(`Unhandled request in timestamp test: ${options.method || 'GET'} ${url}`);
+    });
+
+    render(<ReplayWorkspace />);
+
+    await screen.findByText('No replay jobs saved yet.');
+    fireEvent.click(screen.getByRole('button', { name: 'Time window' }));
+    fireEvent.change(screen.getByLabelText('Start timestamp'), {
+      target: { value: '2026-04-28T14:03:00.000Z' },
+    });
+    fireEvent.change(screen.getByLabelText('End timestamp'), {
+      target: { value: '2026-04-28T14:08:00.000Z' },
+    });
+    fireEvent.submit(screen.getByRole('button', { name: 'Save draft' }).closest('form'));
+
+    expect(await screen.findByText('Saved replay job job-ui-time.')).toBeInTheDocument();
+    expect(createPayload).toEqual({
+      destination: 'orders-replay',
+      'end-timestamp': '2026-04-28T14:08:00.000Z',
+      partition: '0',
+      source: 'orders',
+      'start-timestamp': '2026-04-28T14:03:00.000Z',
+    });
+    expect(screen.getAllByText('Time window').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('10-14').length).toBeGreaterThan(0);
+  });
+
   it('shows validation errors before sending an invalid draft request', async () => {
     fetch.mockImplementation((url) => {
       if (url === '/api/jobs?limit=12') {
