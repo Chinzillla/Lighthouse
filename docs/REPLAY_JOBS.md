@@ -85,7 +85,9 @@ npm run replay:jobs -- cancel --job-id preview-2026-04-28
 
 Cancellation is cooperative. API-started jobs are aborted through the
 in-process runner. CLI-started jobs notice a persisted `cancelled` status during
-progress checks and stop before marking the job completed.
+progress checks and typically stop before completion, but a cancellation
+requested after the last progress update may still allow the job to be marked
+`completed`.
 
 ## Stored Fields
 
