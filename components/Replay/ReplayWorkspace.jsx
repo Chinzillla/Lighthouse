@@ -155,16 +155,12 @@ function ReplayJobsTable({ jobs, loading, onSelectJob, selectedJobId }) {
               <tr
                 key={job.jobId}
                 className={isSelected ? styles.jobRowSelected : undefined}
-                onClick={() => onSelectJob(job.jobId)}
               >
                 <td>
                   <button
                     type="button"
                     className={styles.jobSelect}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onSelectJob(job.jobId);
-                    }}
+                    onClick={() => onSelectJob(job.jobId)}
                   >
                     <span>{job.jobId}</span>
                     {job.dryRun ? <small>Dry run</small> : null}
@@ -208,10 +204,17 @@ export default function ReplayWorkspace() {
 
   useEffect(() => {
     let isMounted = true;
+    let currentController;
 
     async function loadJobs() {
+      if (currentController) {
+        currentController.abort();
+      }
+
+      currentController = new AbortController();
+
       try {
-        const payload = await fetchReplayJobs();
+        const payload = await fetchReplayJobs({ signal: currentController.signal });
 
         if (!isMounted) {
           return;
@@ -235,7 +238,7 @@ export default function ReplayWorkspace() {
           return payload.jobs?.[0]?.jobId ?? null;
         });
       } catch (error) {
-        if (!isMounted) {
+        if (error.name === 'AbortError' || !isMounted) {
           return;
         }
 
@@ -253,6 +256,10 @@ export default function ReplayWorkspace() {
     return () => {
       isMounted = false;
       clearInterval(interval);
+
+      if (currentController) {
+        currentController.abort();
+      }
     };
   }, []);
 
