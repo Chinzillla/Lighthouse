@@ -1,7 +1,7 @@
 # Operations Notes
 
 This document covers the stable run paths for the current Lighthouse foundation:
-the dashboard, Prometheus, Docker sample Kafka, and CI checks.
+the dashboard, Prometheus, Docker sample Kafka, replay CLI, and CI checks.
 
 ## Local Demo Stack
 
@@ -25,11 +25,24 @@ Stop the sample environment:
 npm run docker:sample:down
 ```
 
+Replay a bounded slice from the seeded `orders` topic into `orders-replay`:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094
+```
+
 For an existing Kafka or Confluent Cloud cluster, set the Kafka variables in
 `.env` and run:
 
 ```bash
 npm run docker:external
+```
+
+The replay CLI uses the same `KAFKA_*` environment variables. If the CLI runs
+outside Docker against the sample cluster, point it at:
+
+```text
+localhost:19092,localhost:19093,localhost:19094
 ```
 
 ## Local App Development
@@ -121,6 +134,14 @@ Run the main local gate:
 
 ```bash
 npm run verify
+```
+
+Run the live Kafka replay integration test when the sample stack is already up:
+
+```powershell
+$env:KAFKA_INTEGRATION="1"
+$env:KAFKA_BROKERS="localhost:19092,localhost:19093,localhost:19094"
+npm.cmd run test:kafka:integration
 ```
 
 Run the browser gate after a production build:

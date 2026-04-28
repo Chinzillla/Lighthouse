@@ -1,0 +1,462 @@
+const crypto = require('crypto');
+const { createKafka, parseBrokers } = require('./kafka-config');
+
+const DEFAULT_CLIENT_ID = 'lighthouse-replay-cli';
+const DEFAULT_PROGRESS_INTERVAL = 25;
+
+function formatUsage() {
+  return [
+    'Usage:',
+    '  node tools/kafka-replay.js --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset> [--brokers <host:port,...>] [--client-id <id>]',
+    '',
+    'Examples:',
+    '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25',
+    '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25 --brokers localhost:19092,localhost:19093,localhost:19094',
+    '',
+    'Kafka connection settings also honor the existing KAFKA_* environment variables.',
+  ].join('\n');
+}
+
+function setParsedArg(parsedArgs, key, value) {
+  if (Object.prototype.hasOwnProperty.call(parsedArgs, key)) {
+    throw new Error(`Duplicate argument "--${key}"`);
+  }
+
+  parsedArgs[key] = value;
+}
+
+function parseCliArgs(argv) {
+  const parsedArgs = {};
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+
+    if (token === '--help' || token === '-h') {
+      parsedArgs.help = true;
+      continue;
+    }
+
+    if (!token.startsWith('--')) {
+      throw new Error(`Unexpected argument "${token}"`);
+    }
+
+    const separatorIndex = token.indexOf('=');
+    if (separatorIndex !== -1) {
+      const key = token.slice(2, separatorIndex);
+      const value = token.slice(separatorIndex + 1);
+
+      if (!value) {
+        throw new Error(`Missing value for "--${key}"`);
+      }
+
+      setParsedArg(parsedArgs, key, value);
+      continue;
+    }
+
+    const key = token.slice(2);
+    const value = argv[index + 1];
+
+    if (value === undefined || value.startsWith('--')) {
+      throw new Error(`Missing value for "--${key}"`);
+    }
+
+    setParsedArg(parsedArgs, key, value);
+    index += 1;
+  }
+
+  return parsedArgs;
+}
+
+function parseRequiredInteger(name, value) {
+  if (value === undefined || value === null || value === '') {
+    throw new Error(`Missing required argument "--${name}"`);
+  }
+
+  if (!/^\d+$/.test(String(value))) {
+    throw new Error(`"--${name}" must be a non-negative integer`);
+  }
+
+  return Number(value);
+}
+
+function parseOptionalInteger(name, value, defaultValue) {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+
+  return parseRequiredInteger(name, value);
+}
+
+function normalizeReplayOptions(input, env = process.env) {
+  return {
+    sourceTopic: (input.source || '').trim(),
+    destinationTopic: (input.destination || '').trim(),
+    partition: parseRequiredInteger('partition', input.partition),
+    startOffset: parseRequiredInteger('start', input.start),
+    endOffset: parseRequiredInteger('end', input.end),
+    brokers: parseBrokers(input.brokers || env.KAFKA_BROKERS),
+    clientId: (input['client-id'] || env.KAFKA_CLIENT_ID || DEFAULT_CLIENT_ID).trim(),
+    progressInterval: parseOptionalInteger(
+      'progress-every',
+      input['progress-every'],
+      DEFAULT_PROGRESS_INTERVAL
+    ),
+  };
+}
+
+function validateReplayOptions(options) {
+  if (!options.sourceTopic) {
+    throw new Error('Missing required argument "--source"');
+  }
+
+  if (!options.destinationTopic) {
+    throw new Error('Missing required argument "--destination"');
+  }
+
+  if (options.sourceTopic === options.destinationTopic) {
+    throw new Error('Source and destination topics must be different');
+  }
+
+  if (options.startOffset > options.endOffset) {
+    throw new Error('"--start" must be less than or equal to "--end"');
+  }
+
+  if (!options.clientId) {
+    throw new Error('Kafka client id must not be empty');
+  }
+
+  if (options.progressInterval < 1) {
+    throw new Error('"--progress-every" must be a positive integer');
+  }
+}
+
+function buildKafkaEnv(options, env = process.env) {
+  return {
+    ...env,
+    KAFKA_BROKERS: options.brokers.join(','),
+    KAFKA_CLIENT_ID: options.clientId,
+  };
+}
+
+function createReplayGroupId() {
+  return `lighthouse-replay-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+function findPartitionOffsets(partitionOffsets, partition, label) {
+  const match = partitionOffsets.find((entry) => entry.partition === partition);
+
+  if (!match) {
+    throw new Error(`${label} does not have partition ${partition}`);
+  }
+
+  return {
+    earliestOffset: Number(match.low || 0),
+    nextOffset: Number(match.high || match.offset || 0),
+  };
+}
+
+async function resolveReplayPlan(admin, options) {
+  const topicNames = new Set(await admin.listTopics());
+
+  if (!topicNames.has(options.sourceTopic)) {
+    throw new Error(`Source topic "${options.sourceTopic}" does not exist`);
+  }
+
+  if (!topicNames.has(options.destinationTopic)) {
+    throw new Error(`Destination topic "${options.destinationTopic}" does not exist`);
+  }
+
+  const [sourcePartitionOffsets, destinationPartitionOffsets] = await Promise.all([
+    admin.fetchTopicOffsets(options.sourceTopic),
+    admin.fetchTopicOffsets(options.destinationTopic),
+  ]);
+
+  const sourcePartition = findPartitionOffsets(
+    sourcePartitionOffsets,
+    options.partition,
+    `Source topic "${options.sourceTopic}"`
+  );
+  findPartitionOffsets(
+    destinationPartitionOffsets,
+    options.partition,
+    `Destination topic "${options.destinationTopic}"`
+  );
+
+  if (options.startOffset < sourcePartition.earliestOffset) {
+    throw new Error(
+      `Start offset ${options.startOffset} is before the earliest available offset ${sourcePartition.earliestOffset} for ${options.sourceTopic}[${options.partition}]`
+    );
+  }
+
+  if (options.endOffset >= sourcePartition.nextOffset) {
+    throw new Error(
+      `End offset ${options.endOffset} must be lower than the next unread offset ${sourcePartition.nextOffset} for ${options.sourceTopic}[${options.partition}]`
+    );
+  }
+
+  return {
+    earliestOffset: sourcePartition.earliestOffset,
+    nextOffset: sourcePartition.nextOffset,
+    totalMessages: options.endOffset - options.startOffset + 1,
+  };
+}
+
+async function replayOffsetRange({
+  consumer,
+  producer,
+  logger = console,
+  sourceTopic,
+  destinationTopic,
+  partition,
+  startOffset,
+  endOffset,
+  progressInterval = DEFAULT_PROGRESS_INTERVAL,
+}) {
+  const totalMessages = endOffset - startOffset + 1;
+  let replayedCount = 0;
+  let lastReplayedOffset = null;
+  let stopRequested = false;
+  let resolveCompletion;
+  let rejectCompletion;
+  const completion = new Promise((resolve, reject) => {
+    resolveCompletion = resolve;
+    rejectCompletion = reject;
+  });
+  let completionSettled = false;
+
+  const completeSuccessfully = () => {
+    if (completionSettled) {
+      return;
+    }
+
+    completionSettled = true;
+    resolveCompletion({
+      destinationTopic,
+      endOffset,
+      lastReplayedOffset,
+      partition,
+      replayedCount,
+      sourceTopic,
+      startOffset,
+      totalMessages,
+    });
+  };
+
+  const completeWithError = (error) => {
+    if (completionSettled) {
+      return;
+    }
+
+    completionSettled = true;
+    rejectCompletion(error);
+  };
+
+  const requestStop = () => {
+    if (stopRequested) {
+      return;
+    }
+
+    stopRequested = true;
+    consumer.stop().catch((error) => {
+      completeWithError(error);
+    });
+  };
+
+  const groupJoin = new Promise((resolve) => {
+    consumer.on(consumer.events.GROUP_JOIN, () => {
+      resolve();
+    });
+  });
+  consumer.on(consumer.events.STOP, () => {
+    if (replayedCount !== totalMessages) {
+      completeWithError(
+        new Error(
+          `Replay stopped after copying ${replayedCount} of ${totalMessages} messages from ${sourceTopic}[${partition}]`
+        )
+      );
+      return;
+    }
+
+    completeSuccessfully();
+  });
+  consumer.on(consumer.events.CRASH, (event) => {
+    const error = event?.payload?.error || new Error('Kafka consumer crashed');
+    completeWithError(error);
+  });
+
+  consumer
+    .run({
+      autoCommit: false,
+      eachMessage: async ({ message, partition: currentPartition, topic }) => {
+        if (stopRequested || topic !== sourceTopic || currentPartition !== partition) {
+          return;
+        }
+
+        const currentOffset = Number(message.offset);
+        if (currentOffset < startOffset) {
+          return;
+        }
+
+        if (currentOffset > endOffset) {
+          requestStop();
+          return;
+        }
+
+        await producer.send({
+          topic: destinationTopic,
+          messages: [
+            {
+              headers: message.headers || {},
+              key: message.key,
+              partition,
+              timestamp: message.timestamp,
+              value: message.value,
+            },
+          ],
+        });
+
+        replayedCount += 1;
+        lastReplayedOffset = currentOffset;
+
+        if (
+          replayedCount === 1 ||
+          replayedCount % progressInterval === 0 ||
+          currentOffset === endOffset
+        ) {
+          logger.log(
+            `Replayed ${replayedCount}/${totalMessages} messages from ${sourceTopic}[${partition}] (current offset ${currentOffset})`
+          );
+        }
+
+        if (currentOffset === endOffset) {
+          requestStop();
+        }
+      },
+    })
+    .catch((error) => {
+      completeWithError(error);
+    });
+
+  consumer.pause([{ topic: sourceTopic }]);
+  await groupJoin;
+  consumer.seek({
+    offset: String(startOffset),
+    partition,
+    topic: sourceTopic,
+  });
+  consumer.resume([
+    {
+      partitions: [partition],
+      topic: sourceTopic,
+    },
+  ]);
+
+  return completion;
+}
+
+async function runReplay(rawOptions, dependencies = {}) {
+  const {
+    env = process.env,
+    kafkaFactory = createKafka,
+    logger = console,
+  } = dependencies;
+  const options = normalizeReplayOptions(rawOptions, env);
+  validateReplayOptions(options);
+
+  const kafka = kafkaFactory(buildKafkaEnv(options, env));
+  const admin = kafka.admin();
+  const producer = kafka.producer();
+  const consumer = kafka.consumer({ groupId: createReplayGroupId() });
+
+  await admin.connect();
+  await producer.connect();
+  await consumer.connect();
+
+  try {
+    const replayPlan = await resolveReplayPlan(admin, options);
+    await consumer.subscribe({
+      fromBeginning: true,
+      topic: options.sourceTopic,
+    });
+
+    logger.log(
+      `Validated replay plan: ${options.sourceTopic}[${options.partition}] offsets ${options.startOffset}-${options.endOffset} -> ${options.destinationTopic}[${options.partition}] (${replayPlan.totalMessages} messages)`
+    );
+
+    const summary = await replayOffsetRange({
+      consumer,
+      destinationTopic: options.destinationTopic,
+      endOffset: options.endOffset,
+      logger,
+      partition: options.partition,
+      producer,
+      progressInterval: options.progressInterval,
+      sourceTopic: options.sourceTopic,
+      startOffset: options.startOffset,
+    });
+
+    logger.log(
+      `Replay complete: copied ${summary.replayedCount} messages from ${summary.sourceTopic}[${summary.partition}] into ${summary.destinationTopic}[${summary.partition}]`
+    );
+
+    return {
+      ...summary,
+      clientId: options.clientId,
+      earliestAvailableOffset: replayPlan.earliestOffset,
+      nextOffset: replayPlan.nextOffset,
+    };
+  } finally {
+    await Promise.allSettled([
+      consumer.disconnect(),
+      producer.disconnect(),
+      admin.disconnect(),
+    ]);
+  }
+}
+
+async function main(argv = process.argv.slice(2), dependencies = {}) {
+  let parsedArgs;
+
+  try {
+    parsedArgs = parseCliArgs(argv);
+  } catch (error) {
+    console.error(error.message);
+    console.error('');
+    console.error(formatUsage());
+    process.exitCode = 1;
+    return null;
+  }
+
+  if (parsedArgs.help) {
+    console.log(formatUsage());
+    return null;
+  }
+
+  try {
+    return await runReplay(parsedArgs, dependencies);
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 1;
+    return null;
+  }
+}
+
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  DEFAULT_CLIENT_ID,
+  DEFAULT_PROGRESS_INTERVAL,
+  buildKafkaEnv,
+  createReplayGroupId,
+  findPartitionOffsets,
+  formatUsage,
+  main,
+  normalizeReplayOptions,
+  parseCliArgs,
+  replayOffsetRange,
+  resolveReplayPlan,
+  runReplay,
+  validateReplayOptions,
+};

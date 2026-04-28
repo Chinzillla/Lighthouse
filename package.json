@@ -23,8 +23,10 @@
     "docker:sample:down": "docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml down",
     "metrics:exporter": "node tools/kafka-metrics-exporter.js",
     "demo:producer": "node tools/kafka-demo-producer.js",
+    "replay:cli": "node tools/kafka-replay.js",
     "test": "jest",
-    "test:ci": "jest --runInBand"
+    "test:ci": "jest --runInBand",
+    "test:kafka:integration": "jest --runInBand tools/__tests__/kafka-replay.integration.test.js"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

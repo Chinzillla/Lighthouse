@@ -3,7 +3,8 @@
 Lighthouse should be easy to run against either a local Docker Kafka cluster or
 an existing Kafka-compatible cluster. The project uses one configuration model:
 Kafka connection settings feed the Lighthouse metrics exporter, Prometheus
-scrapes that exporter, and the Next.js app reads from Prometheus.
+scrapes that exporter, the replay CLI uses the same settings, and the Next.js
+app reads from Prometheus.
 
 ## Option 1: Local Sample Kafka
 
@@ -34,6 +35,12 @@ Use this bootstrap list from host tools:
 
 ```bash
 localhost:19092,localhost:19093,localhost:19094
+```
+
+Run the replay CLI against the sample cluster:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094
 ```
 
 Use this bootstrap list from containers:
@@ -69,6 +76,12 @@ For local Node development, run the exporter directly:
 KAFKA_BROKERS=localhost:19092,localhost:19093,localhost:19094 npm run metrics:exporter
 ```
 
+The replay CLI uses the same environment variables. For example:
+
+```bash
+KAFKA_BROKERS=localhost:19092,localhost:19093,localhost:19094 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25
+```
+
 ## Option 3: Confluent Cloud
 
 Create a Confluent Cloud API key and secret for the cluster.
@@ -90,6 +103,16 @@ Then run:
 ```bash
 npm run docker:external
 ```
+
+The replay CLI works the same way against Confluent Cloud:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25
+```
+
+The destination topic must already exist and must be different from the source
+topic. Version 1 preserves the source partition number, so the destination
+topic must also contain that partition.
 
 ## Exported Metrics
 
