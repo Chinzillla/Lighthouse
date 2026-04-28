@@ -222,6 +222,51 @@
   margin: 0;
 }
 
+.progressMeter,
+.progressMeterCompact {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  min-width: 120px;
+}
+
+.progressMeterCompact {
+  max-width: 170px;
+}
+
+.progressText {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #202521;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.progressText small {
+  color: #667064;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.progressTrack {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8eee5;
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #2f7d62;
+  transition: width 180ms ease;
+}
+
 .panelStatus,
 .panelError,
 .panelSuccess {

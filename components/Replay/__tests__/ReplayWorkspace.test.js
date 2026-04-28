@@ -33,6 +33,16 @@ describe('ReplayWorkspace', () => {
           lastReplayedOffset: null,
           partition: 0,
           progressInterval: 25,
+          progress: {
+            averageMessagesPerSecond: null,
+            currentOffset: null,
+            elapsedMs: null,
+            estimatedRemainingMs: null,
+            percent: 0,
+            remainingCount: 6,
+            replayedCount: 0,
+            totalCount: 6,
+          },
           progressTotal: 6,
           replayedCount: 0,
           sourceTopic: 'orders',
@@ -78,6 +88,18 @@ describe('ReplayWorkspace', () => {
       if (url === '/api/jobs/job-ui-1/start' && options.method === 'POST') {
         jobs[0] = {
           ...jobs[0],
+          lastReplayedOffset: 2,
+          progress: {
+            averageMessagesPerSecond: 2.5,
+            currentOffset: 2,
+            elapsedMs: 1200,
+            estimatedRemainingMs: 1200,
+            percent: 50,
+            remainingCount: 3,
+            replayedCount: 3,
+            totalCount: 6,
+          },
+          replayedCount: 3,
           startedAt: '2026-04-28T18:01:00.000Z',
           status: 'running',
           updatedAt: '2026-04-28T18:01:00.000Z',
@@ -110,6 +132,10 @@ describe('ReplayWorkspace', () => {
     expect(
       within(screen.getByText('Selected job').closest('article')).getByText('running')
     ).toBeInTheDocument();
+    expect(screen.getAllByText('50%').length).toBeGreaterThan(0);
+    expect(
+      within(screen.getByText('Selected job').closest('article')).getByText('2.5/s')
+    ).toBeInTheDocument();
   });
 
   it('creates timestamp replay drafts from the time-window mode', async () => {
@@ -137,6 +163,16 @@ describe('ReplayWorkspace', () => {
             messagesPerSecond: 4,
             partition: 0,
             progressInterval: 25,
+            progress: {
+              averageMessagesPerSecond: null,
+              currentOffset: null,
+              elapsedMs: null,
+              estimatedRemainingMs: null,
+              percent: 0,
+              remainingCount: 5,
+              replayedCount: 0,
+              totalCount: 5,
+            },
             progressTotal: 5,
             replayMode: 'timestamp',
             replayedCount: 0,
