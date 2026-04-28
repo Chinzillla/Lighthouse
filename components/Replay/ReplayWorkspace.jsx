@@ -17,6 +17,7 @@ const INITIAL_FORM = {
   end: '5',
   endTimestamp: '',
   jobId: '',
+  messagesPerSecond: '',
   mode: 'offset',
   partition: '0',
   source: 'orders',
@@ -56,6 +57,10 @@ function formatTimestampWindow(job) {
   return `${new Date(job.startTimestamp).toLocaleString()} to ${new Date(
     job.endTimestamp
   ).toLocaleString()}`;
+}
+
+function formatThrottle(job) {
+  return job.messagesPerSecond ? `${job.messagesPerSecond}/s` : 'Unthrottled';
 }
 
 function formatUpdatedAt(value) {
@@ -186,6 +191,7 @@ function ReplayJobsTable({ jobs, loading, onSelectJob, selectedJobId }) {
                   >
                     <span>{job.jobId}</span>
                     <small>{formatJobRange(job)}</small>
+                    {job.messagesPerSecond ? <small>{formatThrottle(job)}</small> : null}
                     {job.dryRun ? <small>Dry run</small> : null}
                   </button>
                 </td>
@@ -570,6 +576,18 @@ export default function ReplayWorkspace() {
                 onChange={(event) => updateFormField('jobId', event.target.value)}
               />
             </label>
+            <label>
+              <span>Max messages/sec</span>
+              <input
+                name="messagesPerSecond"
+                inputMode="numeric"
+                placeholder="Unthrottled"
+                value={formState.messagesPerSecond}
+                onChange={(event) =>
+                  updateFormField('messagesPerSecond', event.target.value)
+                }
+              />
+            </label>
             <div className={styles.formActions}>
               <button type="submit" disabled={actionState.loading}>
                 {actionState.loading ? 'Saving...' : 'Save draft'}
@@ -608,6 +626,10 @@ export default function ReplayWorkspace() {
                 <div>
                   <dt>Offsets</dt>
                   <dd>{formatJobRange(selectedJob)}</dd>
+                </div>
+                <div>
+                  <dt>Throttle</dt>
+                  <dd>{formatThrottle(selectedJob)}</dd>
                 </div>
                 {formatTimestampWindow(selectedJob) ? (
                   <div>

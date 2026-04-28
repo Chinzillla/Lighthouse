@@ -11,8 +11,8 @@ const { formatUsage, parseCliArgs } = require('./kafka-replay');
 function formatJobsUsage() {
   return [
     'Usage:',
-    '  node tools/kafka-replay-jobs.js create --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset> [--dry-run] [--job-id <id>]',
-    '  node tools/kafka-replay-jobs.js create --source <topic> --destination <topic> --partition <id> --start-timestamp <timestamp> --end-timestamp <timestamp> [--dry-run] [--job-id <id>]',
+    '  node tools/kafka-replay-jobs.js create --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset> [--messages-per-second <count>] [--dry-run] [--job-id <id>]',
+    '  node tools/kafka-replay-jobs.js create --source <topic> --destination <topic> --partition <id> --start-timestamp <timestamp> --end-timestamp <timestamp> [--messages-per-second <count>] [--dry-run] [--job-id <id>]',
     '  node tools/kafka-replay-jobs.js start --job-id <id>',
     '  node tools/kafka-replay-jobs.js list [--limit <count>]',
     '  node tools/kafka-replay-jobs.js show --job-id <id>',

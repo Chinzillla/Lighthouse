@@ -134,6 +134,7 @@ describe('ReplayWorkspace', () => {
             errorMessage: null,
             jobId: 'job-ui-time',
             lastReplayedOffset: null,
+            messagesPerSecond: 4,
             partition: 0,
             progressInterval: 25,
             progressTotal: 5,
@@ -162,18 +163,23 @@ describe('ReplayWorkspace', () => {
     fireEvent.change(screen.getByLabelText('End timestamp'), {
       target: { value: '2026-04-28T14:08:00.000Z' },
     });
+    fireEvent.change(screen.getByLabelText('Max messages/sec'), {
+      target: { value: '4' },
+    });
     fireEvent.submit(screen.getByRole('button', { name: 'Save draft' }).closest('form'));
 
     expect(await screen.findByText('Saved replay job job-ui-time.')).toBeInTheDocument();
     expect(createPayload).toEqual({
       destination: 'orders-replay',
       'end-timestamp': '2026-04-28T14:08:00.000Z',
+      'messages-per-second': '4',
       partition: '0',
       source: 'orders',
       'start-timestamp': '2026-04-28T14:03:00.000Z',
     });
     expect(screen.getAllByText('Time window').length).toBeGreaterThan(0);
     expect(screen.getAllByText('10-14').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('4/s').length).toBeGreaterThan(0);
   });
 
   it('shows validation errors before sending an invalid draft request', async () => {

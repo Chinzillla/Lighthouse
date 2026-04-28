@@ -19,6 +19,7 @@ Implemented today:
 - Local Docker Kafka stack with three brokers, Prometheus, and a demo producer
 - Kafka metrics exporter that supports local Kafka and SASL/SSL clusters
 - Offset-range and timestamp-window Kafka replay for one topic partition
+- Optional message-per-second throttling for replay writes
 - Dry-run replay preview and replay metadata headers for traceability
 - Replay job workflow with SQLite persistence and job status tracking
 - Replay job REST API for creation, listing, preview, start, cancel, and status reads
@@ -30,7 +31,7 @@ Implemented today:
 
 Planned next:
 
-- Operational controls such as throttling, richer progress metrics, and running-job cancellation
+- Operational controls such as richer progress metrics and running-job cancellation
 
 ## Architecture
 
@@ -195,6 +196,7 @@ Optional flags:
 --brokers <host:port,...>
 --client-id <id>
 --job-id <id>
+--messages-per-second <count>
 --dry-run
 --progress-every <count>
 ```
@@ -204,6 +206,7 @@ Examples:
 ```bash
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --brokers localhost:19092,localhost:19093,localhost:19094
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --messages-per-second 10
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z
 ```
 
@@ -228,6 +231,9 @@ the destination topic.
 Timestamp windows use inclusive start and exclusive end semantics. Lighthouse
 resolves the window to concrete offsets before replay starts.
 
+`--messages-per-second` caps actual replay writes. Preview remains a dry-run
+read path and is not slowed by the cap.
+
 ## Replay Jobs
 
 Phase 3 adds a job workflow backed by local SQLite persistence.
@@ -242,6 +248,12 @@ Create a draft job from a timestamp window:
 
 ```bash
 npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z --job-id incident-window-2026-04-28
+```
+
+Create a throttled draft job:
+
+```bash
+npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 10 --end 25 --messages-per-second 10 --job-id incident-throttled-2026-04-28
 ```
 
 Start it:
@@ -282,7 +294,8 @@ curl -X POST http://localhost:3000/api/jobs \
 ```
 
 Timestamp job creation uses `start-timestamp` and `end-timestamp` in the JSON
-body and stores the resolved offsets on the job.
+body and stores the resolved offsets on the job. Add `messages-per-second` to
+store a replay write cap.
 
 Preview it without producing:
 
@@ -315,6 +328,7 @@ The replay workspace supports:
 
 - entering source topic, destination topic, partition, and offset range
 - switching to timestamp-window replay when the incident window is known by time
+- setting an optional max messages-per-second cap
 - saving a persisted draft replay job
 - selecting a recent job from the monitor table
 - previewing structured messages and replay headers

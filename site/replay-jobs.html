@@ -31,7 +31,8 @@
           The persisted replay workflow is now backed by SQLite and exposed
           through both CLI commands and HTTP endpoints. Jobs survive process
           restarts and track status plus replay progress over time. Timestamp
-          jobs resolve their window to concrete offsets before they are saved.
+          jobs resolve their window to concrete offsets before they are saved,
+          and jobs can store an optional messages-per-second cap.
         </p>
 
         <h2>Default Storage</h2>
@@ -50,6 +51,7 @@
         <h2>Commands</h2>
         <pre><code>npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 10 --end 25 --job-id incident-2026-04-28
 npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start-timestamp 2026-04-28T14:03:00.000Z --end-timestamp 2026-04-28T14:08:00.000Z --job-id incident-window-2026-04-28
+npm run replay:jobs -- create --source orders --destination orders-replay --partition 0 --start 10 --end 25 --messages-per-second 10 --job-id incident-throttled-2026-04-28
 npm run replay:jobs -- start --job-id incident-2026-04-28
 npm run replay:jobs -- list
 npm run replay:jobs -- show --job-id incident-2026-04-28
@@ -70,6 +72,7 @@ npm run replay:jobs -- cancel --job-id draft-preview</code></pre>
           <li>original timestamp window for timestamp jobs</li>
           <li>status</li>
           <li>dry-run flag</li>
+          <li>optional messages-per-second cap</li>
           <li>replayed count and total message count</li>
           <li>created, started, and completed timestamps</li>
           <li>error message and last replayed offset</li>
@@ -77,8 +80,7 @@ npm run replay:jobs -- cancel --job-id draft-preview</code></pre>
 
         <div class="callout">
           Running job cancellation is not implemented yet. That belongs to the
-          later operational-controls phase, where cancellation and throttling
-          become first-class controls.
+          later operational-controls phase.
         </div>
 
         <p class="footer">
