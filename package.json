@@ -29,6 +29,7 @@
     "test:kafka:integration": "jest --runInBand tools/__tests__/kafka-replay.integration.test.js"
   },
   "dependencies": {
+    "better-sqlite3": "^12.9.0",
     "chart.js": "^4.5.1",
     "kafkajs": "^2.2.4",
     "next": "^16.2.4",

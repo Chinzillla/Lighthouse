@@ -312,6 +312,7 @@ async function replayOffsetRange({
   consumer,
   producer,
   logger = console,
+  onProgress = async () => {},
   sourceTopic,
   destinationTopic,
   partition,
@@ -448,6 +449,17 @@ async function replayOffsetRange({
 
         replayedCount += 1;
         lastReplayedOffset = currentOffset;
+        await onProgress({
+          currentOffset,
+          destinationTopic,
+          dryRun,
+          lastReplayedOffset,
+          partition,
+          replayedCount,
+          replayJobId,
+          sourceTopic,
+          totalMessages,
+        });
 
         if (
           !dryRun &&
@@ -493,6 +505,7 @@ async function runReplay(rawOptions, dependencies = {}) {
     env = process.env,
     kafkaFactory = createKafka,
     logger = console,
+    onProgress = async () => {},
   } = dependencies;
   const options = normalizeReplayOptions(rawOptions, env);
   validateReplayOptions(options);
@@ -525,6 +538,7 @@ async function runReplay(rawOptions, dependencies = {}) {
       dryRun: options.dryRun,
       endOffset: options.endOffset,
       logger,
+      onProgress,
       partition: options.partition,
       producer,
       progressInterval: options.progressInterval,
