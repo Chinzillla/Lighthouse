@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighthouse Docs</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1 class="brand">Lighthouse</h1>
+        <p class="tagline">Docs for the Kafka replay engine rebuild.</p>
+        <nav class="nav">
+          <a class="active" href="./index.html">Overview</a>
+          <a href="./getting-started.html">Getting Started</a>
+          <a href="./replay-cli.html">Replay CLI</a>
+          <a href="./architecture.html">Architecture</a>
+          <a href="./operations.html">Operations</a>
+          <a href="./roadmap.html">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <p class="eyebrow">Overview</p>
+        <h1>Deterministic Kafka replay for debugging event windows safely.</h1>
+        <p class="lede">
+          Lighthouse is being rebuilt from a legacy monitoring dashboard into a
+          Kafka replay workbench. The current implementation already supports a
+          local sample cluster, external Kafka and Confluent Cloud connection
+          settings, a Prometheus-backed dashboard, and a replay CLI with dry-run
+          preview plus replay traceability headers.
+        </p>
+
+        <div class="grid">
+          <section>
+            <h3>Run locally</h3>
+            <p>Start the full demo stack with Kafka, Prometheus, and the app.</p>
+            <pre><code>npm run docker:sample</code></pre>
+          </section>
+          <section>
+            <h3>Preview a replay</h3>
+            <p>Inspect a bounded slice without producing anything.</p>
+            <pre><code>npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --dry-run</code></pre>
+          </section>
+          <section>
+            <h3>Run a replay</h3>
+            <p>Copy one closed offset range into a sandbox topic.</p>
+            <pre><code>npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25</code></pre>
+          </section>
+        </div>
+
+        <h2>What Exists Today</h2>
+        <ul>
+          <li>Prometheus-backed Kafka dashboard in Next.js</li>
+          <li>Local three-broker Kafka sample stack in Docker Compose</li>
+          <li>Kafka metrics exporter for local Kafka and Confluent Cloud</li>
+          <li>Replay CLI with offset-range replay, dry-run preview, and metadata headers</li>
+          <li>CI for audit, lint, unit tests, build, Docker, and Playwright</li>
+        </ul>
+
+        <h2>Read This First</h2>
+        <div class="grid">
+          <section>
+            <h3>Getting Started</h3>
+            <p>Choose between the sample cluster, an existing Kafka endpoint, or Confluent Cloud.</p>
+            <p><a href="./getting-started.html">Open setup guide</a></p>
+          </section>
+          <section>
+            <h3>Replay CLI</h3>
+            <p>See the command contract, dry-run mode, and replay header model.</p>
+            <p><a href="./replay-cli.html">Open replay guide</a></p>
+          </section>
+          <section>
+            <h3>Architecture</h3>
+            <p>Understand the current dashboard flow and the replay execution path.</p>
+            <p><a href="./architecture.html">Open architecture guide</a></p>
+          </section>
+          <section>
+            <h3>Operations</h3>
+            <p>Use the runbook for health checks, troubleshooting, and local verification.</p>
+            <p><a href="./operations.html">Open operations guide</a></p>
+          </section>
+        </div>
+
+        <div class="callout">
+          The static documentation site is meant for GitHub Pages deployment.
+          The source lives in <code>site/</code> and the workflow publishes it
+          on pushes to <code>main</code> or by manual dispatch.
+        </div>
+
+        <p class="footer">
+          For repo-facing docs, see <code>README.md</code> and the markdown files
+          in <code>docs/</code>.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

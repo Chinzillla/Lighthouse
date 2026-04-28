@@ -43,6 +43,12 @@ Run the replay CLI against the sample cluster:
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094
 ```
 
+Preview the replay without producing:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094 --dry-run --job-id sample-preview
+```
+
 Use this bootstrap list from containers:
 
 ```bash
@@ -113,6 +119,17 @@ npm run replay:cli -- --source orders --destination orders-replay --partition 0 
 The destination topic must already exist and must be different from the source
 topic. Version 1 preserves the source partition number, so the destination
 topic must also contain that partition.
+
+When a replay writes records, Lighthouse adds:
+
+- `x-replayed`
+- `x-replay-job-id`
+- `x-original-topic`
+- `x-original-partition`
+- `x-original-offset`
+
+Use `--dry-run` when you want to preview the records and headers without
+producing to the destination topic.
 
 ## Exported Metrics
 

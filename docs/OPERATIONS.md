@@ -31,6 +31,12 @@ Replay a bounded slice from the seeded `orders` topic into `orders-replay`:
 npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094
 ```
 
+Preview the same replay without producing:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094 --dry-run --job-id sample-preview
+```
+
 For an existing Kafka or Confluent Cloud cluster, set the Kafka variables in
 `.env` and run:
 
@@ -127,6 +133,16 @@ curl http://localhost:9308/metrics
 
 Offsets should increase after the demo producer has been running for a few
 scrape intervals.
+
+### Replay Validation Fails
+
+If the replay CLI rejects the run before consuming messages, check:
+
+- the destination topic exists
+- the destination topic is different from the source topic
+- the chosen partition exists on both topics
+- the source topic has retained the requested offset range
+- the end offset is lower than the topic's next unread offset
 
 ## CI Parity
 

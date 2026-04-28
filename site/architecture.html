@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighthouse Docs | Architecture</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1 class="brand">Lighthouse</h1>
+        <p class="tagline">Docs for the Kafka replay engine rebuild.</p>
+        <nav class="nav">
+          <a href="./index.html">Overview</a>
+          <a href="./getting-started.html">Getting Started</a>
+          <a href="./replay-cli.html">Replay CLI</a>
+          <a class="active" href="./architecture.html">Architecture</a>
+          <a href="./operations.html">Operations</a>
+          <a href="./roadmap.html">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <p class="eyebrow">Architecture</p>
+        <h1>Two current execution paths: metrics and replay.</h1>
+        <p class="lede">
+          Lighthouse is still early in the rebuild, so the architecture is kept
+          intentionally direct: a read-only metrics path for cluster visibility
+          and a CLI path for replay execution.
+        </p>
+
+        <h2>Dashboard Flow</h2>
+        <pre><code>Browser
+  -> Next.js page
+  -> /api/dashboard-metrics
+  -> Prometheus fetch client
+  -> Prometheus HTTP API
+  -> Kafka metrics exporter
+  -> Kafka Admin metadata</code></pre>
+        <p>
+          Prometheus access stays on the server side. The browser never hits
+          Prometheus directly.
+        </p>
+
+        <h2>Replay Flow</h2>
+        <pre><code>CLI input
+  -> Kafka admin validation
+  -> Source topic subscription
+  -> Partition seek to start offset
+  -> Per-message preview or replay
+  -> Destination topic write
+  -> Summary and progress logs</code></pre>
+
+        <h2>Local Sample Stack</h2>
+        <ul>
+          <li>Three Kafka brokers in KRaft mode</li>
+          <li>Topic initializer for <code>orders</code>, <code>payments</code>, and <code>orders-replay</code></li>
+          <li>Demo producer for recurring sample traffic</li>
+          <li>Kafka metrics exporter</li>
+          <li>Prometheus</li>
+          <li>Next.js application</li>
+        </ul>
+
+        <h2>Why the Rebuild Uses This Shape</h2>
+        <ul>
+          <li>It keeps production Prometheus and Kafka access behind explicit configuration.</li>
+          <li>It proves replay behavior before adding job orchestration and UI complexity.</li>
+          <li>It gives the project a stable demo story that does not depend on hosted clusters.</li>
+        </ul>
+
+        <p class="footer">
+          The next architectural step is a persistent replay job model with a
+          small API layer over the engine.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>

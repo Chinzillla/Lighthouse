@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighthouse Docs | Operations</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1 class="brand">Lighthouse</h1>
+        <p class="tagline">Docs for the Kafka replay engine rebuild.</p>
+        <nav class="nav">
+          <a href="./index.html">Overview</a>
+          <a href="./getting-started.html">Getting Started</a>
+          <a href="./replay-cli.html">Replay CLI</a>
+          <a href="./architecture.html">Architecture</a>
+          <a class="active" href="./operations.html">Operations</a>
+          <a href="./roadmap.html">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <p class="eyebrow">Operations</p>
+        <h1>Runbooks, health checks, and local verification.</h1>
+        <p class="lede">
+          This page mirrors the practical runbook for working on Lighthouse
+          locally and validating the current feature set.
+        </p>
+
+        <h2>Core Commands</h2>
+        <pre><code>npm run docker:sample
+npm run docker:sample:down
+npm run verify
+npm run e2e</code></pre>
+
+        <h2>Health Checks</h2>
+        <pre><code>curl http://localhost:3000/api/health
+curl http://localhost:3000/api/dashboard-metrics
+curl http://localhost:9090/-/ready
+curl http://localhost:9308/metrics</code></pre>
+
+        <h2>Replay Verification</h2>
+        <p>Use the live integration test with the sample stack already running.</p>
+        <pre><code>$env:KAFKA_INTEGRATION="1"
+$env:KAFKA_BROKERS="localhost:19092,localhost:19093,localhost:19094"
+npm.cmd run test:kafka:integration</code></pre>
+
+        <h2>Troubleshooting</h2>
+        <h3>Prometheus unavailable</h3>
+        <p>Check that Prometheus is up and reachable from the app process.</p>
+        <pre><code>docker ps
+curl http://localhost:9090/-/ready</code></pre>
+
+        <h3>Dashboard metrics stay at zero</h3>
+        <p>Confirm the demo producer and Kafka exporter are running.</p>
+        <pre><code>docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml ps
+curl http://localhost:9308/metrics</code></pre>
+
+        <h3>Replay CLI range validation fails</h3>
+        <p>
+          This usually means the requested offsets are outside the retained
+          source range, or the destination topic is missing the selected
+          partition.
+        </p>
+
+        <h2>CI</h2>
+        <p>The main CI workflow currently runs:</p>
+        <ul>
+          <li>production dependency audit</li>
+          <li>ESLint</li>
+          <li>Jest tests</li>
+          <li>Next.js production build</li>
+          <li>Playwright end-to-end checks</li>
+          <li>Docker config and image builds</li>
+        </ul>
+
+        <p class="footer">
+          The GitHub Pages workflow publishes the static docs site separately
+          from the application CI workflow.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>
