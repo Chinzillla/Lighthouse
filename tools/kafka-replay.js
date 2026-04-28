@@ -3,15 +3,17 @@ const { createKafka, parseBrokers } = require('./kafka-config');
 
 const DEFAULT_CLIENT_ID = 'lighthouse-replay-cli';
 const DEFAULT_PROGRESS_INTERVAL = 25;
+const BOOLEAN_ARGS = new Set(['dry-run']);
 
 function formatUsage() {
   return [
     'Usage:',
-    '  node tools/kafka-replay.js --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset> [--brokers <host:port,...>] [--client-id <id>]',
+    '  node tools/kafka-replay.js --source <topic> --destination <topic> --partition <id> --start <offset> --end <offset> [--brokers <host:port,...>] [--client-id <id>] [--job-id <id>] [--dry-run]',
     '',
     'Examples:',
     '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25',
     '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25 --brokers localhost:19092,localhost:19093,localhost:19094',
+    '  node tools/kafka-replay.js --source orders --destination orders-replay --partition 0 --start 10 --end 25 --dry-run',
     '',
     'Kafka connection settings also honor the existing KAFKA_* environment variables.',
   ].join('\n');
@@ -54,6 +56,11 @@ function parseCliArgs(argv) {
     }
 
     const key = token.slice(2);
+    if (BOOLEAN_ARGS.has(key)) {
+      setParsedArg(parsedArgs, key, true);
+      continue;
+    }
+
     const value = argv[index + 1];
 
     if (value === undefined || value.startsWith('--')) {
@@ -65,6 +72,27 @@ function parseCliArgs(argv) {
   }
 
   return parsedArgs;
+}
+
+function parseCliBoolean(name, value, defaultValue = false) {
+  if (value === undefined || value === null || value === '') {
+    return defaultValue;
+  }
+
+  if (value === true || value === false) {
+    return value;
+  }
+
+  const normalizedValue = String(value).toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalizedValue)) {
+    return true;
+  }
+
+  if (['0', 'false', 'no', 'off'].includes(normalizedValue)) {
+    return false;
+  }
+
+  throw new Error(`"--${name}" must be a boolean value`);
 }
 
 function parseRequiredInteger(name, value) {
@@ -87,6 +115,10 @@ function parseOptionalInteger(name, value, defaultValue) {
   return parseRequiredInteger(name, value);
 }
 
+function createReplayJobId() {
+  return `replay-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
 function normalizeReplayOptions(input, env = process.env) {
   return {
     sourceTopic: (input.source || '').trim(),
@@ -96,11 +128,13 @@ function normalizeReplayOptions(input, env = process.env) {
     endOffset: parseRequiredInteger('end', input.end),
     brokers: parseBrokers(input.brokers || env.KAFKA_BROKERS),
     clientId: (input['client-id'] || env.KAFKA_CLIENT_ID || DEFAULT_CLIENT_ID).trim(),
+    dryRun: parseCliBoolean('dry-run', input['dry-run'], false),
     progressInterval: parseOptionalInteger(
       'progress-every',
       input['progress-every'],
       DEFAULT_PROGRESS_INTERVAL
     ),
+    replayJobId: (input['job-id'] || createReplayJobId()).trim(),
   };
 }
 
@@ -125,6 +159,10 @@ function validateReplayOptions(options) {
     throw new Error('Kafka client id must not be empty');
   }
 
+  if (!options.replayJobId) {
+    throw new Error('Replay job id must not be empty');
+  }
+
   if (options.progressInterval < 1) {
     throw new Error('"--progress-every" must be a positive integer');
   }
@@ -140,6 +178,75 @@ function buildKafkaEnv(options, env = process.env) {
 
 function createReplayGroupId() {
   return `lighthouse-replay-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+function toHeaderString(value) {
+  if (value === undefined || value === null) {
+    return '';
+  }
+
+  if (Buffer.isBuffer(value)) {
+    return value.toString('utf8');
+  }
+
+  return String(value);
+}
+
+function formatPreviewText(value, maxLength = 160) {
+  const normalizedValue = toHeaderString(value).replace(/\s+/g, ' ').trim();
+
+  if (!normalizedValue) {
+    return '<empty>';
+  }
+
+  if (normalizedValue.length <= maxLength) {
+    return normalizedValue;
+  }
+
+  return `${normalizedValue.slice(0, maxLength - 1)}...`;
+}
+
+function formatHeadersForPreview(headers = {}) {
+  return Object.fromEntries(
+    Object.entries(headers).map(([key, value]) => [key, toHeaderString(value)])
+  );
+}
+
+function buildReplayHeaders({
+  existingHeaders = {},
+  offset,
+  partition,
+  replayJobId,
+  sourceTopic,
+}) {
+  return {
+    ...existingHeaders,
+    'x-original-offset': String(offset),
+    'x-original-partition': String(partition),
+    'x-original-topic': sourceTopic,
+    'x-replay-job-id': replayJobId,
+    'x-replayed': 'true',
+  };
+}
+
+function logDryRunPreview({
+  destinationTopic,
+  logger,
+  message,
+  offset,
+  partition,
+  previewIndex,
+  replayHeaders,
+  sourceTopic,
+  totalMessages,
+}) {
+  logger.log(
+    `Dry run preview ${previewIndex}/${totalMessages}: ${sourceTopic}[${partition}] offset ${offset} -> ${destinationTopic}[${partition}] key="${formatPreviewText(
+      message.key
+    )}" value="${formatPreviewText(message.value)}" headers=${JSON.stringify(
+      formatHeadersForPreview(replayHeaders)
+    )}`
+  );
 }
 
 function findPartitionOffsets(partitionOffsets, partition, label) {
@@ -210,7 +317,9 @@ async function replayOffsetRange({
   partition,
   startOffset,
   endOffset,
+  dryRun = false,
   progressInterval = DEFAULT_PROGRESS_INTERVAL,
+  replayJobId,
 }) {
   const totalMessages = endOffset - startOffset + 1;
   let replayedCount = 0;
@@ -302,26 +411,51 @@ async function replayOffsetRange({
           return;
         }
 
-        await producer.send({
-          topic: destinationTopic,
-          messages: [
-            {
-              headers: message.headers || {},
-              key: message.key,
-              partition,
-              timestamp: message.timestamp,
-              value: message.value,
-            },
-          ],
+        const replayHeaders = buildReplayHeaders({
+          existingHeaders: message.headers || {},
+          offset: currentOffset,
+          partition,
+          replayJobId,
+          sourceTopic,
         });
+
+        if (dryRun) {
+          logDryRunPreview({
+            destinationTopic,
+            logger,
+            message,
+            offset: currentOffset,
+            partition,
+            previewIndex: replayedCount + 1,
+            replayHeaders,
+            sourceTopic,
+            totalMessages,
+          });
+        } else {
+          await producer.send({
+            topic: destinationTopic,
+            messages: [
+              {
+                headers: replayHeaders,
+                key: message.key,
+                partition,
+                timestamp: message.timestamp,
+                value: message.value,
+              },
+            ],
+          });
+        }
 
         replayedCount += 1;
         lastReplayedOffset = currentOffset;
 
         if (
-          replayedCount === 1 ||
-          replayedCount % progressInterval === 0 ||
-          currentOffset === endOffset
+          !dryRun &&
+          (
+            replayedCount === 1 ||
+            replayedCount % progressInterval === 0 ||
+            currentOffset === endOffset
+          )
         ) {
           logger.log(
             `Replayed ${replayedCount}/${totalMessages} messages from ${sourceTopic}[${partition}] (current offset ${currentOffset})`
@@ -365,11 +499,13 @@ async function runReplay(rawOptions, dependencies = {}) {
 
   const kafka = kafkaFactory(buildKafkaEnv(options, env));
   const admin = kafka.admin();
-  const producer = kafka.producer();
+  const producer = options.dryRun ? null : kafka.producer();
   const consumer = kafka.consumer({ groupId: createReplayGroupId() });
 
   await admin.connect();
-  await producer.connect();
+  if (producer) {
+    await producer.connect();
+  }
   await consumer.connect();
 
   try {
@@ -380,35 +516,45 @@ async function runReplay(rawOptions, dependencies = {}) {
     });
 
     logger.log(
-      `Validated replay plan: ${options.sourceTopic}[${options.partition}] offsets ${options.startOffset}-${options.endOffset} -> ${options.destinationTopic}[${options.partition}] (${replayPlan.totalMessages} messages)`
+      `Validated replay plan: ${options.sourceTopic}[${options.partition}] offsets ${options.startOffset}-${options.endOffset} -> ${options.destinationTopic}[${options.partition}] (${replayPlan.totalMessages} messages, job ${options.replayJobId})`
     );
 
     const summary = await replayOffsetRange({
       consumer,
       destinationTopic: options.destinationTopic,
+      dryRun: options.dryRun,
       endOffset: options.endOffset,
       logger,
       partition: options.partition,
       producer,
       progressInterval: options.progressInterval,
+      replayJobId: options.replayJobId,
       sourceTopic: options.sourceTopic,
       startOffset: options.startOffset,
     });
 
-    logger.log(
-      `Replay complete: copied ${summary.replayedCount} messages from ${summary.sourceTopic}[${summary.partition}] into ${summary.destinationTopic}[${summary.partition}]`
-    );
+    if (options.dryRun) {
+      logger.log(
+        `Dry run complete: previewed ${summary.replayedCount} messages from ${summary.sourceTopic}[${summary.partition}] for ${summary.destinationTopic}[${summary.partition}]`
+      );
+    } else {
+      logger.log(
+        `Replay complete: copied ${summary.replayedCount} messages from ${summary.sourceTopic}[${summary.partition}] into ${summary.destinationTopic}[${summary.partition}]`
+      );
+    }
 
     return {
       ...summary,
       clientId: options.clientId,
+      dryRun: options.dryRun,
       earliestAvailableOffset: replayPlan.earliestOffset,
       nextOffset: replayPlan.nextOffset,
+      replayJobId: options.replayJobId,
     };
   } finally {
     await Promise.allSettled([
       consumer.disconnect(),
-      producer.disconnect(),
+      producer ? producer.disconnect() : Promise.resolve(),
       admin.disconnect(),
     ]);
   }
@@ -448,12 +594,18 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_CLIENT_ID,
   DEFAULT_PROGRESS_INTERVAL,
+  buildReplayHeaders,
   buildKafkaEnv,
+  createReplayJobId,
   createReplayGroupId,
   findPartitionOffsets,
+  formatHeadersForPreview,
+  formatPreviewText,
   formatUsage,
+  logDryRunPreview,
   main,
   normalizeReplayOptions,
+  parseCliBoolean,
   parseCliArgs,
   replayOffsetRange,
   resolveReplayPlan,
