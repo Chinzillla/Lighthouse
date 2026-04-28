@@ -2,7 +2,7 @@
 
 This document covers the stable run paths for the current Lighthouse foundation:
 the dashboard, Prometheus, Docker sample Kafka, replay CLI, replay jobs, replay
-API, and CI checks.
+API, replay UI, and CI checks.
 
 ## Local Demo Stack
 
@@ -54,6 +54,14 @@ curl -X POST http://localhost:3000/api/jobs \
 curl http://localhost:3000/api/jobs/sample-job-api/preview
 curl -X POST http://localhost:3000/api/jobs/sample-job-api/start
 ```
+
+Use the same flow in the browser:
+
+1. open `http://localhost:3000`
+2. go to the `Replay` section
+3. save a draft job
+4. preview the selected job
+5. start the replay and monitor status in the recent jobs table
 
 For an existing Kafka or Confluent Cloud cluster, set the Kafka variables in
 `.env` and run:
@@ -108,6 +116,10 @@ Replay jobs API:
 curl http://localhost:3000/api/jobs
 curl http://localhost:3000/api/jobs/sample-job-api
 ```
+
+Replay UI:
+
+- `http://localhost:3000/#replay`
 
 Prometheus readiness:
 
@@ -186,6 +198,12 @@ If `POST /api/jobs/:jobId/start` fails, check the same conditions plus:
 - the Next.js app process has the same `KAFKA_*` settings as the CLI
 - the job is not already `running`, `completed`, or `cancelled`
 - the job id in the route matches a persisted record
+
+If the replay workspace UI does not update after an action, check:
+
+- the browser can reach `GET /api/jobs`
+- the current app process has the right `KAFKA_*` settings
+- the selected job is still present in the recent jobs list
 
 ## CI Parity
 
