@@ -100,7 +100,7 @@ Each replay job stores:
 - optional messages-per-second cap
 - replayed count
 - total message count for the requested range
-- derived progress snapshot returned by the API and UI
+- persisted counters/timestamps used to derive the progress snapshot returned by the API and UI
 - created time
 - started time
 - completed time

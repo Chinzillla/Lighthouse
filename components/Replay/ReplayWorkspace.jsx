@@ -64,6 +64,7 @@ function formatThrottle(job) {
 }
 
 function normalizeMetric(value, fallback = 0) {
+  if (value === null || value === undefined) return fallback;
   const metric = Number(value);
 
   return Number.isFinite(metric) ? metric : fallback;
