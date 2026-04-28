@@ -10,10 +10,11 @@ Completed:
 - Phase 2 safety and traceability for dry-run preview and replay headers
 - Phase 3 replay jobs and local persistence
 - Phase 4 API layer
+- Phase 5 minimal replay UI
 
 Next focus:
 
-- Phase 5 minimal replay UI
+- Phase 6 operational controls
 
 ## Phase 0: Foundation
 

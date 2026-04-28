@@ -6,6 +6,7 @@ import KafkaActivityChart from '../components/Graphs/KafkaActivityChart.jsx';
 import LogEndOffset from '../components/Graphs/LogEndOffset.jsx';
 import MetricsExporterStatus from '../components/Graphs/MetricsExporterStatus.jsx';
 import PartitionCount from '../components/Graphs/PartitionCount.jsx';
+import ReplayWorkspace from '../components/Replay/ReplayWorkspace.jsx';
 import TopicInventoryChart from '../components/Graphs/TopicInventoryChart.jsx';
 
 const POLL_INTERVAL_MS = 5000;
@@ -102,11 +103,12 @@ export default function Home() {
         <section className={styles.hero}>
           <div className={styles.heroCopy}>
             <p className={styles.eyebrow}>Kafka operations console</p>
-            <h1>Cluster signals with a cleaner path to replay tooling.</h1>
+            <h1>Cluster signals and a replay workflow in one operational console.</h1>
             <p>
               Lighthouse is being rebuilt from a basic monitoring dashboard
-              into a focused Kafka debugging workbench, starting with reliable
-              metrics, CI, Docker, and a documented replay roadmap.
+              into a focused Kafka debugging workbench with live cluster
+              signals, persisted replay jobs, previewable event windows, and
+              a cleaner path from inspection to recovery.
             </p>
           </div>
 
@@ -179,10 +181,12 @@ export default function Home() {
           </article>
         </section>
 
+        <ReplayWorkspace />
+
         <section className={styles.roadmapBand} id="roadmap">
           <div>
             <p className={styles.eyebrow}>Rebuild track</p>
-            <h2>Foundation first, replay engine next.</h2>
+            <h2>Foundation done, replay UI underway.</h2>
           </div>
           <ol>
             <li>
@@ -196,6 +200,10 @@ export default function Home() {
             <li>
               <span>3</span>
               Promote replay jobs into an API-backed workflow.
+            </li>
+            <li>
+              <span>4</span>
+              Add a minimal replay workspace for draft creation, preview, and monitoring.
             </li>
           </ol>
         </section>

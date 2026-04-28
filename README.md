@@ -22,6 +22,7 @@ Implemented today:
 - Dry-run replay preview and replay metadata headers for traceability
 - Replay job workflow with SQLite persistence and job status tracking
 - Replay job REST API for creation, listing, preview, start, cancel, and status reads
+- Minimal replay workspace in the Next.js UI for draft creation, preview, start, and monitoring
 - Static GitHub Pages documentation site source in `site/`
 - Jest component tests
 - GitHub Actions workflow for dependency audit, lint, tests, build, and Docker checks
@@ -29,7 +30,7 @@ Implemented today:
 
 Planned next:
 
-- Minimal UI for replay creation and job monitoring
+- Operational controls such as timestamp replay, throttling, and running-job cancellation
 
 ## Architecture
 
@@ -285,6 +286,29 @@ The start endpoint launches the replay worker in the application process and
 returns the job in `running` state immediately. Progress and final status are
 persisted in SQLite, so the job can be polled through `GET /api/jobs/:jobId`.
 
+## Replay UI
+
+Phase 5 adds the first replay-specific application surface inside the existing
+operations console.
+
+The replay workspace supports:
+
+- entering source topic, destination topic, partition, and offset range
+- saving a persisted draft replay job
+- selecting a recent job from the monitor table
+- previewing structured messages and replay headers
+- starting or cancelling draft jobs
+- polling recent job state from the API
+
+Recommended demo flow:
+
+1. start the sample stack with `npm run docker:sample`
+2. open `http://localhost:3000`
+3. use the `Replay` navigation link
+4. save a draft for `orders -> orders-replay`
+5. preview the message slice
+6. start the replay and watch the job status change
+
 ## Local Development
 
 Use this when working on the Next.js app itself.
@@ -324,6 +348,7 @@ See [docs/REPLAY_CLI.md](docs/REPLAY_CLI.md) for replay semantics, dry-run
 behavior, and traceability headers.
 See [docs/REPLAY_JOBS.md](docs/REPLAY_JOBS.md) for the persisted job workflow.
 See [docs/REPLAY_API.md](docs/REPLAY_API.md) for the replay job HTTP contract.
+See [docs/REPLAY_UI.md](docs/REPLAY_UI.md) for the application workflow over the API.
 
 ## Quality Gates
 

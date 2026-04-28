@@ -17,6 +17,7 @@
           <a href="./replay-cli.html">Replay CLI</a>
           <a href="./replay-jobs.html">Replay Jobs</a>
           <a href="./replay-api.html">Replay API</a>
+          <a href="./replay-ui.html">Replay UI</a>
           <a class="active" href="./architecture.html">Architecture</a>
           <a href="./operations.html">Operations</a>
           <a href="./roadmap.html">Roadmap</a>
@@ -25,7 +26,7 @@
 
       <main class="main">
         <p class="eyebrow">Architecture</p>
-        <h1>Three current execution paths: metrics, replay, and replay API.</h1>
+        <h1>Four current execution paths: metrics, replay, replay API, and replay UI.</h1>
         <p class="lede">
           Lighthouse is still early in the rebuild, so the architecture is kept
           intentionally direct: a read-only metrics path for cluster visibility
@@ -70,6 +71,14 @@
   -> SQLite job store
   -> In-process replay runner for start requests
   -> Kafka replay engine</code></pre>
+
+        <h2>Replay UI Flow</h2>
+        <pre><code>Browser
+  -> Replay workspace
+  -> /api/jobs and /api/jobs/:id/*
+  -> Replay job service
+  -> SQLite job store
+  -> In-process replay runner</code></pre>
 
         <h2>Local Sample Stack</h2>
         <ul>

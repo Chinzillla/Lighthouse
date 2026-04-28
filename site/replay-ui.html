@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lighthouse Docs | Replay UI</title>
+    <link rel="stylesheet" href="./assets/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1 class="brand">Lighthouse</h1>
+        <p class="tagline">Docs for the Kafka replay engine rebuild.</p>
+        <nav class="nav">
+          <a href="./index.html">Overview</a>
+          <a href="./getting-started.html">Getting Started</a>
+          <a href="./replay-cli.html">Replay CLI</a>
+          <a href="./replay-jobs.html">Replay Jobs</a>
+          <a href="./replay-api.html">Replay API</a>
+          <a class="active" href="./replay-ui.html">Replay UI</a>
+          <a href="./architecture.html">Architecture</a>
+          <a href="./operations.html">Operations</a>
+          <a href="./roadmap.html">Roadmap</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <p class="eyebrow">Replay UI</p>
+        <h1>Use the browser workflow to create, preview, and start replay jobs.</h1>
+        <p class="lede">
+          Phase 5 adds a replay workspace directly to the Lighthouse operations
+          console. It stays narrowly focused on the replay path instead of
+          turning the application into a generic dashboard shell.
+        </p>
+
+        <h2>What You Can Do</h2>
+        <ul>
+          <li>save a draft replay job</li>
+          <li>select a persisted job from the recent jobs table</li>
+          <li>preview message payloads and replay headers</li>
+          <li>start a replay from the selected draft</li>
+          <li>cancel draft or failed jobs</li>
+          <li>monitor job status and progress</li>
+        </ul>
+
+        <h2>Open the Workspace</h2>
+        <pre><code>http://localhost:3000/#replay</code></pre>
+
+        <h2>Recommended Demo Flow</h2>
+        <ol>
+          <li>start the sample stack with <code>npm run docker:sample</code></li>
+          <li>open Lighthouse in the browser</li>
+          <li>save a draft for <code>orders -> orders-replay</code></li>
+          <li>preview the selected job</li>
+          <li>start the replay</li>
+          <li>watch the recent jobs table update</li>
+        </ol>
+
+        <h2>Current Limits</h2>
+        <ul>
+          <li>running-job cancellation is not implemented yet</li>
+          <li>timestamp replay is not available yet</li>
+          <li>replay execution still runs in-process in the Next.js app</li>
+        </ul>
+
+        <p class="footer">
+          For repo-facing details, see <code>docs/REPLAY_UI.md</code>.
+        </p>
+      </main>
+    </div>
+  </body>
+</html>
