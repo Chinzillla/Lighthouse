@@ -35,6 +35,9 @@
 
         <h2>Current Status</h2>
         <p>Accepted locally on 2026-04-28 with the sample Kafka stack.</p>
+        <p>Start the sample Kafka stack before running the live Kafka acceptance checks:</p>
+        <pre><code>npm run docker:sample:detached</code></pre>
+        <p>Then run the full verification sequence:</p>
         <pre><code>npm run verify
 npm run e2e
 $env:KAFKA_INTEGRATION="1"
