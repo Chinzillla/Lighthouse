@@ -282,48 +282,112 @@ describeIfKafka('Kafka replay integration', () => {
     const partition = 0;
     const runId = `timestamp-${uniqueId()}`;
     const replayJobId = `timestamp-job-${uniqueId()}`;
-    let sourceTopic;
-    let destinationTopic;
+
+    // Declare topic names before connecting so the finally block can always clean them up,
+    // even if createTopics succeeds but waitForTopic subsequently times out.
+    const sourceTopic = `lighthouse-timestamp-source-${uniqueId()}`;
+    const destinationTopic = `lighthouse-timestamp-destination-${uniqueId()}`;
 
     await admin.connect();
     await producer.connect();
 
     try {
-      ({ sourceTopic, destinationTopic } = await createIsolatedReplayTopics(
-        admin,
-        'lighthouse-timestamp'
-      ));
-
-      const baseTimestamp = Date.now() + 60000;
-      const timestamps = [
-        baseTimestamp,
-        baseTimestamp + 1000,
-        baseTimestamp + 2000,
-        baseTimestamp + 3000,
-      ];
-
-      await producer.send({
-        topic: sourceTopic,
-        messages: timestamps.map((timestamp, index) => ({
-          headers: { 'x-replay-integration-run': runId },
-          key: `timestamp-${runId}-${index}`,
-          partition,
-          timestamp: String(timestamp),
-          value: JSON.stringify({
-            orderId: `timestamp-${runId}-${index}`,
-            status: `state-${index}`,
-          }),
-        })),
+      await admin.createTopics({
+        waitForLeaders: false,
+        topics: [
+          { numPartitions: 1, replicationFactor: 3, topic: sourceTopic },
+          { numPartitions: 1, replicationFactor: 3, topic: destinationTopic },
+        ],
       });
+      await Promise.all([
+        waitForTopic(admin, sourceTopic),
+        waitForTopic(admin, destinationTopic),
+      ]);
+
+      // Send messages one at a time with small sleeps between each to ensure distinct
+      // broker-assigned timestamps. This avoids relying on producer-specified timestamps
+      // which may be overwritten when log.message.timestamp.type=LogAppendTime is configured.
+      for (let index = 0; index < 4; index += 1) {
+        await producer.send({
+          topic: sourceTopic,
+          messages: [
+            {
+              headers: { 'x-replay-integration-run': runId },
+              key: `timestamp-${runId}-${index}`,
+              partition,
+              value: JSON.stringify({
+                orderId: `timestamp-${runId}-${index}`,
+                status: `state-${index}`,
+              }),
+            },
+          ],
+        });
+        if (index < 3) {
+          await sleep(50);
+        }
+      }
+
+      // Consume the source messages to observe the actual broker-assigned timestamps.
+      const sourceMessages = [];
+      const sourceConsumer = kafka.consumer({
+        groupId: `lighthouse-ts-source-${uniqueId()}`,
+      });
+      await sourceConsumer.connect();
+      try {
+        let resolveSource;
+        let rejectSource;
+        const sourceCompletion = new Promise((resolve, reject) => {
+          resolveSource = resolve;
+          rejectSource = reject;
+        });
+        await sourceConsumer.subscribe({ fromBeginning: true, topic: sourceTopic });
+        sourceConsumer.on(sourceConsumer.events.STOP, () => resolveSource(sourceMessages));
+        sourceConsumer.on(sourceConsumer.events.CRASH, (event) =>
+          rejectSource(event?.payload?.error || new Error('Source consumer crashed'))
+        );
+        sourceConsumer
+          .run({
+            autoCommit: false,
+            eachMessage: async ({ message }) => {
+              if (message.headers?.['x-replay-integration-run']?.toString() === runId) {
+                sourceMessages.push({
+                  offset: Number(message.offset),
+                  timestamp: Number(message.timestamp),
+                });
+                if (sourceMessages.length === 4) {
+                  sourceConsumer.stop().catch(rejectSource);
+                }
+              }
+            },
+          })
+          .catch(rejectSource);
+        await Promise.race([
+          sourceCompletion,
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error('Timed out reading source messages')),
+              15000
+            )
+          ),
+        ]);
+      } finally {
+        await sourceConsumer.disconnect();
+      }
+
+      // Use the actual observed timestamps to define the replay window.
+      // Mirror the original pattern: start at message[1].timestamp, end at message[3].timestamp
+      // so that fetchTopicOffsetsByTimestamp resolves startOffset=1 and endOffset=2.
+      const startTimestamp = new Date(sourceMessages[1].timestamp).toISOString();
+      const endTimestamp = new Date(sourceMessages[3].timestamp).toISOString();
 
       const summary = await runReplay(
         {
           destination: destinationTopic,
-          'end-timestamp': new Date(timestamps[3]).toISOString(),
+          'end-timestamp': endTimestamp,
           'job-id': replayJobId,
           partition: String(partition),
           source: sourceTopic,
-          'start-timestamp': new Date(timestamps[1]).toISOString(),
+          'start-timestamp': startTimestamp,
         },
         {
           env: {
@@ -340,14 +404,14 @@ describeIfKafka('Kafka replay integration', () => {
         destinationTopic,
         dryRun: false,
         endOffset: 2,
-        endTimestamp: new Date(timestamps[3]).toISOString(),
+        endTimestamp,
         partition,
         replayMode: 'timestamp',
         replayedCount: 2,
         replayJobId,
         sourceTopic,
         startOffset: 1,
-        startTimestamp: new Date(timestamps[1]).toISOString(),
+        startTimestamp,
         totalMessages: 2,
       });
 
@@ -365,20 +429,14 @@ describeIfKafka('Kafka replay integration', () => {
         `timestamp-${runId}-1`,
         `timestamp-${runId}-2`,
       ]);
-      expect(replayedMessages[0].headers['x-replay-job-id'].toString()).toBe(
-        replayJobId
-      );
+      expect(replayedMessages[0].headers['x-replay-job-id'].toString()).toBe(replayJobId);
       expect(replayedMessages[0].headers['x-original-offset'].toString()).toBe('1');
       expect(replayedMessages[1].headers['x-original-offset'].toString()).toBe('2');
     } finally {
       await producer.disconnect();
-
-      if (sourceTopic && destinationTopic) {
-        await admin.deleteTopics({
-          topics: [sourceTopic, destinationTopic],
-        });
-      }
-
+      await admin.deleteTopics({
+        topics: [sourceTopic, destinationTopic],
+      });
       await admin.disconnect();
     }
   });
