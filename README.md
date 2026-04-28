@@ -18,13 +18,13 @@ Implemented today:
 - Responsive operations console for broker, partition, topic, and offset signals
 - Local Docker Kafka stack with three brokers, Prometheus, and a demo producer
 - Kafka metrics exporter that supports local Kafka and SASL/SSL clusters
+- Offset-range Kafka replay CLI for one topic partition and one closed offset range
 - Jest component tests
 - GitHub Actions workflow for dependency audit, lint, tests, build, and Docker checks
 - Multi-stage Dockerfile and Docker Compose support
 
 Planned next:
 
-- Offset-range Kafka replay CLI
 - Dry-run preview and replay metadata headers
 - Persistent replay job model
 - REST API for replay job creation, status, preview, and cancellation
@@ -81,6 +81,12 @@ The local cluster exposes these host bootstrap ports:
 localhost:19092,localhost:19093,localhost:19094
 ```
 
+Replay a slice of Kafka history into the seeded `orders-replay` topic:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 0 --end 5 --brokers localhost:19092,localhost:19093,localhost:19094
+```
+
 ### Option 2: Lighthouse With Existing Kafka
 
 Use this when you already have a plain Kafka-compatible cluster.
@@ -129,6 +135,48 @@ npm run docker:external
 Open `http://localhost:3000`.
 
 Do not commit real Confluent credentials. `.env` is ignored by git.
+
+## Replay CLI
+
+The Phase 1 replay engine is a focused CLI for deterministic offset-range replay.
+Version 1 intentionally supports:
+
+- one source topic at a time
+- one source partition at a time
+- one closed offset range per run
+- replay into an existing destination topic
+- preserving key, value, headers, timestamp, and partition number
+
+Required flags:
+
+```text
+--source <topic>
+--destination <topic>
+--partition <id>
+--start <offset>
+--end <offset>
+```
+
+Optional flags:
+
+```text
+--brokers <host:port,...>
+--client-id <id>
+```
+
+Examples:
+
+```bash
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25 --brokers localhost:19092,localhost:19093,localhost:19094
+npm run replay:cli -- --source orders --destination orders-replay --partition 0 --start 10 --end 25
+```
+
+The second form uses the same `KAFKA_*` environment variables as the metrics
+exporter, so it works for:
+
+- the local Docker Kafka sample
+- a plain Kafka cluster
+- Confluent Cloud
 
 ## Local Development
 
@@ -181,6 +229,14 @@ Use the combined local gate when you do not need the browser check:
 
 ```bash
 npm run verify
+```
+
+Run the live Kafka replay integration test against the local sample cluster:
+
+```powershell
+$env:KAFKA_INTEGRATION="1"
+$env:KAFKA_BROKERS="localhost:19092,localhost:19093,localhost:19094"
+npm.cmd run test:kafka:integration
 ```
 
 The same checks run in GitHub Actions on pull requests and pushes to `main`,
