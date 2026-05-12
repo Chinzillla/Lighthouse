@@ -36,7 +36,7 @@
     "better-sqlite3": "^12.9.0",
     "chart.js": "^4.5.1",
     "kafkajs": "^2.2.4",
-    "next": "^16.2.4",
+    "next": "^16.2.6",
     "react": "^19.2.5",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.5"
@@ -50,7 +50,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.4",
+    "eslint-config-next": "^16.2.6",
     "globals": "^17.5.0",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.3.0",
