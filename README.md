@@ -1,38 +1,7 @@
 # Lighthouse
 
-Lighthouse is a Kafka debugging workbench in active rebuild. The current
-application is a read-only Kafka metrics console backed by Prometheus and
-Next.js. The roadmap expands it into a safe replay engine for inspecting and
+Lighthouse is a Kafka debugging workbench. The application is a read-only Kafka metrics console backed by Prometheus and Next.js. The mvp is a safe replay engine for inspecting and
 replaying Kafka event windows into sandbox topics.
-
-The rebuild is intentionally incremental: stabilize the existing dashboard,
-add CI and Docker support, then build replay functionality behind clear APIs
-and tests.
-
-## Current Scope
-
-Implemented today:
-
-- Next.js dashboard for Kafka cluster metrics exposed through Prometheus
-- Fetch-based API route that proxies Prometheus queries from the server
-- Responsive operations console for broker, partition, topic, and offset signals
-- Local Docker Kafka stack with three brokers, Prometheus, and a demo producer
-- Kafka metrics exporter that supports local Kafka and SASL/SSL clusters
-- Offset-range and timestamp-window Kafka replay for one topic partition
-- Optional message-per-second throttling for replay writes
-- Dry-run replay preview and replay metadata headers for traceability
-- Replay job workflow with SQLite persistence, status tracking, and progress metrics
-- Replay job REST API for creation, listing, preview, start, cancel, and status reads
-- Running replay job cancellation for persisted jobs
-- Minimal replay workspace in the Next.js UI for draft creation, preview, start, cancel, and monitoring
-- Static GitHub Pages documentation site source in `site/`
-- Jest component tests
-- GitHub Actions workflow for dependency audit, lint, tests, build, and Docker checks
-- Multi-stage Dockerfile and Docker Compose support
-
-Planned next:
-
-- Alpha release quality control and hardening
 
 ## Architecture
 
@@ -323,9 +292,6 @@ remaining messages, current offset, elapsed time, throughput, and ETA.
 
 ## Replay UI
 
-Phase 5 adds the first replay-specific application surface inside the existing
-operations console.
-
 The replay workspace supports:
 
 - entering source topic, destination topic, partition, and offset range
@@ -430,14 +396,6 @@ Validate Docker Compose files locally:
 ```bash
 npm run docker:config
 ```
-
-## Branching Workflow
-
-- `main` should stay releasable.
-- Feature work should happen on short-lived branches such as
-  `feature/revamp-foundation`, `feature/replay-cli`, or `fix/prometheus-errors`.
-- Each branch should keep a focused scope and pass CI before merge.
-- Larger work should be split into small commits that map to the roadmap.
 
 ## Roadmap
 
