@@ -41,3 +41,29 @@ infra/azure/scripts/deploy.ps1 `
   -SqlAdministratorLogin lighthouseadmin `
   -SqlAdministratorPassword $sqlPassword
 ```
+
+Event Hubs exposes a Kafka-compatible endpoint. Configure Lighthouse and the
+smoke script with:
+
+```text
+KAFKA_BROKERS=<namespace>.servicebus.windows.net:9093
+KAFKA_SSL=true
+KAFKA_SASL_MECHANISM=plain
+KAFKA_SASL_USERNAME=$ConnectionString
+KAFKA_SASL_PASSWORD=<connection string secret>
+```
+
+Smoke test KafkaJS compatibility after deploy:
+
+```powershell
+$env:KAFKA_BROKERS="<namespace>.servicebus.windows.net:9093"
+$env:KAFKA_SSL="true"
+$env:KAFKA_SASL_MECHANISM="plain"
+$env:KAFKA_SASL_USERNAME='$ConnectionString'
+$env:KAFKA_SASL_PASSWORD="<event-hubs-connection-string>"
+npm.cmd run kafka:eventhubs:smoke -- --source orders --destination orders-replay
+```
+
+The script probes timestamp offset lookup and reports a warning if the namespace
+does not support the KafkaJS timestamp-offset call. In that case, keep the first
+Azure demo on offset-range replay.

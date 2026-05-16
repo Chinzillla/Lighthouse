@@ -25,6 +25,7 @@
     "docker:sample:detached": "docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml up --build -d",
     "docker:sample:down": "docker compose -f docker-compose.yml -f docker-compose.local-kafka.yml down",
     "metrics:exporter": "node tools/kafka-metrics-exporter.js",
+    "kafka:eventhubs:smoke": "node tools/event-hubs-kafka-smoke.js",
     "demo:producer": "node tools/kafka-demo-producer.js",
     "replay:cli": "node tools/kafka-replay.js",
     "replay:jobs": "node tools/kafka-replay-jobs.js",
