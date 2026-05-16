@@ -67,3 +67,7 @@ npm.cmd run kafka:eventhubs:smoke -- --source orders --destination orders-replay
 The script probes timestamp offset lookup and reports a warning if the namespace
 does not support the KafkaJS timestamp-offset call. In that case, keep the first
 Azure demo on offset-range replay.
+
+Operational query examples live in `infra/azure/log-analytics.kql` for startup
+errors, Prometheus scrape issues, Kafka/Event Hubs authentication failures, and
+Azure SQL connection failures.

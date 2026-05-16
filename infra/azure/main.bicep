@@ -257,6 +257,15 @@ resource kafkaMetricsApp 'Microsoft.App/containerApps@2024-03-01' = {
               initialDelaySeconds: 20
               periodSeconds: 30
             }
+            {
+              type: 'Readiness'
+              httpGet: {
+                path: '/metrics'
+                port: 9308
+              }
+              initialDelaySeconds: 10
+              periodSeconds: 15
+            }
           ]
           resources: {
             cpu: json('0.25')
