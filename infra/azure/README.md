@@ -71,3 +71,20 @@ Azure demo on offset-range replay.
 Operational query examples live in `infra/azure/log-analytics.kql` for startup
 errors, Prometheus scrape issues, Kafka/Event Hubs authentication failures, and
 Azure SQL connection failures.
+
+The optional GitHub Actions deployment workflow is
+`.github/workflows/azure-container-apps.yml`. It uses OIDC and expects these
+GitHub environment variables:
+
+- `AZURE_ACR_NAME`
+- `AZURE_LOCATION`
+- `AZURE_NAME_PREFIX`
+- `AZURE_RESOURCE_GROUP`
+- `AZURE_SQL_ADMIN_LOGIN`
+
+It expects these GitHub environment secrets:
+
+- `AZURE_CLIENT_ID`
+- `AZURE_TENANT_ID`
+- `AZURE_SUBSCRIPTION_ID`
+- `AZURE_SQL_ADMIN_PASSWORD`
