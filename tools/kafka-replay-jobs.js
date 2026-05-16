@@ -1,4 +1,4 @@
-const { createReplayJobStore } = require('../lib/replay-jobs/store');
+const { createReplayJobStoreFromEnv } = require('../lib/replay-jobs/store-factory');
 const {
   cancelReplayJob,
   createReplayJob,
@@ -63,7 +63,7 @@ async function main(argv = process.argv.slice(2)) {
     return null;
   }
 
-  const store = createReplayJobStore();
+  const store = createReplayJobStoreFromEnv();
 
   try {
     if (command === 'create') {
@@ -86,7 +86,7 @@ async function main(argv = process.argv.slice(2)) {
     if (command === 'list') {
       const parsedArgs = parseCliArgs(commandArgs);
       const limit = parsedArgs.limit ? Number(parsedArgs.limit) : 50;
-      const jobs = listReplayJobs({ limit, store });
+      const jobs = await listReplayJobs({ limit, store });
       printJobList(jobs);
       return jobs;
     }
@@ -94,7 +94,7 @@ async function main(argv = process.argv.slice(2)) {
     if (command === 'show') {
       const parsedArgs = parseCliArgs(commandArgs);
       const jobId = requireJobId(parsedArgs);
-      const job = getReplayJob(jobId, { store });
+      const job = await getReplayJob(jobId, { store });
       printJob(job);
       return job;
     }
@@ -102,7 +102,7 @@ async function main(argv = process.argv.slice(2)) {
     if (command === 'cancel') {
       const parsedArgs = parseCliArgs(commandArgs);
       const jobId = requireJobId(parsedArgs);
-      const job = cancelReplayJob(jobId, { store });
+      const job = await cancelReplayJob(jobId, { store });
       console.log(`Replay job ${job.jobId} is now ${job.status}`);
       printJob(job);
       return job;
@@ -116,7 +116,7 @@ async function main(argv = process.argv.slice(2)) {
     process.exitCode = 1;
     return null;
   } finally {
-    store.close();
+    await store.close();
   }
 }
 

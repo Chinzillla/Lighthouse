@@ -18,7 +18,7 @@ function createHandler(dependencies = {}) {
     }
 
     try {
-      const job = startInBackground(getJobIdFromRequest(request), {
+      const job = await startInBackground(getJobIdFromRequest(request), {
         env: dependencies.env,
         logger: dependencies.logger,
         now: dependencies.now,
