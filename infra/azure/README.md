@@ -17,6 +17,10 @@ The deployment expects an Azure resource group and creates:
 Do not commit real SQL passwords, Event Hubs connection strings, publish
 profiles, `.env` files, Azure state files, or generated credentials.
 
+Prometheus is packaged from `observability/prometheus.Dockerfile` for Azure
+because Container Apps does not use the local Compose bind mount. The Azure
+scrape config targets the internal `kafka-metrics:9308` Container App hostname.
+
 Validate the Bicep template:
 
 ```powershell
