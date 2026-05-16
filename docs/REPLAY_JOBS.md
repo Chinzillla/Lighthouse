@@ -23,7 +23,7 @@ resolve their time window before persistence, then store the resolved offsets.
 
 ## Database Location
 
-By default, replay jobs are stored in:
+By default, replay jobs use the SQLite store and are stored in:
 
 ```text
 data/lighthouse.sqlite
@@ -36,6 +36,24 @@ LIGHTHOUSE_DB_PATH=/absolute/path/to/lighthouse.sqlite
 ```
 
 The `data/` directory is ignored by git.
+
+Select the backing store with:
+
+```text
+LIGHTHOUSE_JOB_STORE=sqlite
+LIGHTHOUSE_JOB_STORE=azure-sql
+```
+
+For Azure SQL, set:
+
+```text
+LIGHTHOUSE_SQL_CONNECTION_STRING=<sql-connection-string>
+```
+
+The Azure SQL store creates or updates the `replay_jobs` table on startup and
+keeps the same persisted fields and behavior as the SQLite store. Default CI
+tests use SQLite plus a mocked Azure SQL request layer; real Azure SQL checks
+are opt-in.
 
 ## Commands
 
@@ -135,7 +153,7 @@ The snapshot includes:
 
 The persisted workflow still keeps orchestration intentionally local and simple:
 
-- jobs are stored locally on one machine
 - the API starts replay work in the same application process
+- horizontal app replicas are unsafe until replay execution moves behind a queue
 
 Distributed worker coordination remains outside the current MVP scope.

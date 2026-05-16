@@ -1,0 +1,101 @@
+name: Azure Container Apps Demo Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag to build and deploy
+        required: true
+        default: demo
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Build, push, and deploy
+    runs-on: ubuntu-latest
+    environment: azure-demo
+
+    env:
+      ACR_NAME: ${{ vars.AZURE_ACR_NAME }}
+      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+      AZURE_NAME_PREFIX: ${{ vars.AZURE_NAME_PREFIX }}
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      SQL_ADMIN_LOGIN: ${{ vars.AZURE_SQL_ADMIN_LOGIN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify before image build
+        run: npm run verify
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate Bicep
+        run: az bicep build --file infra/azure/main.bicep
+
+      - name: Resolve ACR login server
+        id: acr
+        run: |
+          echo "login_server=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)" >> "$GITHUB_OUTPUT"
+
+      - name: Login to ACR
+        run: az acr login --name "$ACR_NAME"
+
+      - name: Build images
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          LOGIN_SERVER: ${{ steps.acr.outputs.login_server }}
+        run: |
+          docker build -f Dockerfile -t "$LOGIN_SERVER/lighthouse:$IMAGE_TAG" .
+          docker build -f Dockerfile.tools -t "$LOGIN_SERVER/lighthouse-kafka-metrics:$IMAGE_TAG" .
+          docker build -f observability/prometheus.Dockerfile -t "$LOGIN_SERVER/lighthouse-prometheus:$IMAGE_TAG" .
+
+      - name: Push images
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          LOGIN_SERVER: ${{ steps.acr.outputs.login_server }}
+        run: |
+          docker push "$LOGIN_SERVER/lighthouse:$IMAGE_TAG"
+          docker push "$LOGIN_SERVER/lighthouse-kafka-metrics:$IMAGE_TAG"
+          docker push "$LOGIN_SERVER/lighthouse-prometheus:$IMAGE_TAG"
+
+      - name: Deploy infrastructure and Container Apps
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          LOGIN_SERVER: ${{ steps.acr.outputs.login_server }}
+          SQL_ADMIN_PASSWORD: ${{ secrets.AZURE_SQL_ADMIN_PASSWORD }}
+        run: |
+          az group create \
+            --name "$AZURE_RESOURCE_GROUP" \
+            --location "$AZURE_LOCATION" \
+            --tags app=lighthouse environment=demo
+
+          az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --template-file infra/azure/main.bicep \
+            --parameters \
+              namePrefix="$AZURE_NAME_PREFIX" \
+              location="$AZURE_LOCATION" \
+              lighthouseImage="$LOGIN_SERVER/lighthouse:$IMAGE_TAG" \
+              kafkaMetricsImage="$LOGIN_SERVER/lighthouse-kafka-metrics:$IMAGE_TAG" \
+              prometheusImage="$LOGIN_SERVER/lighthouse-prometheus:$IMAGE_TAG" \
+              sqlAdministratorLogin="$SQL_ADMIN_LOGIN" \
+              sqlAdministratorPassword="$SQL_ADMIN_PASSWORD"

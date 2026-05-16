@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "namePrefix": {
+      "value": "lhdemo"
+    },
+    "lighthouseImage": {
+      "value": "REPLACE_WITH_ACR.azurecr.io/lighthouse:REPLACE_WITH_TAG"
+    },
+    "kafkaMetricsImage": {
+      "value": "REPLACE_WITH_ACR.azurecr.io/lighthouse-kafka-metrics:REPLACE_WITH_TAG"
+    },
+    "prometheusImage": {
+      "value": "REPLACE_WITH_ACR.azurecr.io/lighthouse-prometheus:REPLACE_WITH_TAG"
+    },
+    "sqlAdministratorLogin": {
+      "value": "lighthouseadmin"
+    },
+    "sqlAdministratorPassword": {
+      "value": "REPLACE_AT_DEPLOY_TIME_DO_NOT_COMMIT_REAL_VALUE"
+    },
+    "tags": {
+      "value": {
+        "app": "lighthouse",
+        "environment": "demo"
+      }
+    }
+  }
+}
