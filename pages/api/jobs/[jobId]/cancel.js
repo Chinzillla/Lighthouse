@@ -22,7 +22,7 @@ function createHandler(dependencies = {}) {
     }
 
     try {
-      const job = cancelInBackground(getJobIdFromRequest(request), {
+      const job = await cancelInBackground(getJobIdFromRequest(request), {
         env: dependencies.env,
         now: dependencies.now,
       });

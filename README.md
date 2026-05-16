@@ -347,6 +347,9 @@ npm.cmd run dev
 
 See [docs/KAFKA_CONFIGURATION.md](docs/KAFKA_CONFIGURATION.md) for the full
 Kafka configuration guide.
+See [docs/AZURE_CONTAINER_APPS.md](docs/AZURE_CONTAINER_APPS.md) for the Azure
+Container Apps production demo using Event Hubs Kafka, Azure SQL, ACR, and
+internal-only Prometheus/exporter services.
 See [docs/REPLAY_CLI.md](docs/REPLAY_CLI.md) for replay semantics, dry-run
 behavior, and traceability headers.
 See [docs/REPLAY_JOBS.md](docs/REPLAY_JOBS.md) for the persisted job workflow.

@@ -1,0 +1,27 @@
+// Container App startup errors
+ContainerAppConsoleLogs_CL
+| where ContainerAppName_s in ("lighthouse", "prometheus", "kafka-metrics")
+| where Log_s has_any ("error", "failed", "exception", "unhandled")
+| project TimeGenerated, ContainerAppName_s, RevisionName_s, Log_s
+| order by TimeGenerated desc
+
+// Prometheus scrape failures
+ContainerAppConsoleLogs_CL
+| where ContainerAppName_s == "prometheus"
+| where Log_s has_any ("scrape", "target", "kafka-metrics", "error")
+| project TimeGenerated, RevisionName_s, Log_s
+| order by TimeGenerated desc
+
+// Kafka/Event Hubs authentication failures
+ContainerAppConsoleLogs_CL
+| where ContainerAppName_s in ("lighthouse", "kafka-metrics")
+| where Log_s has_any ("SASL", "authentication", "Not authorized", "ConnectionString", "KafkaJS")
+| project TimeGenerated, ContainerAppName_s, RevisionName_s, Log_s
+| order by TimeGenerated desc
+
+// Azure SQL connection failures
+ContainerAppConsoleLogs_CL
+| where ContainerAppName_s == "lighthouse"
+| where Log_s has_any ("LIGHTHOUSE_SQL_CONNECTION_STRING", "Login failed", "ETIMEOUT", "ConnectionError", "RequestError")
+| project TimeGenerated, RevisionName_s, Log_s
+| order by TimeGenerated desc
